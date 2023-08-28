@@ -4,8 +4,9 @@
 
 <p>Hey There!</p> 
 <p>I am Emerson Mendes :)</p> 
-This is my <a href="https://github.com/emersonmendes" target="_blank">GitHub</a>
-This is my <a href="https://www.linkedin.com/in/emersonemendes/" target="_blank">Linkedin</a>
+My <a href="https://github.com/emersonmendes" target="_blank">GitHub</a>
+My <a href="https://www.linkedin.com/in/emersonemendes/" target="_blank">Linkedin</a>
+My <a href="https://linuxandjava.blogspot.com/" target="_blank">Blogspot</a>
 
 My favorite code quote:<br/><br/>"<span id="k">Code is like humor. When you have to explain it, it’s bad</span>" - Cory House
 
