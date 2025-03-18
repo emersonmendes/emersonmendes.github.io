@@ -3,10 +3,8 @@
 <span id="a">root@emersonmendes</span>:<span id="b">~</span><span id="c">$</span> cat emerson.txt<br/>
 
 <p>Hey There!</p> 
-<p>I am Emerson Mendes :)</p> 
-
+<p>I am Emerson Mendes :)</p>
 <p>Email: emerson.emendes@gmail.com</p> 
-
 My <a href="https://github.com/emersonmendes" target="_blank">GitHub</a>
 My <a href="https://www.linkedin.com/in/emersonemendes" target="_blank">Linkedin</a>
 My <a href="https://blog.emersonmendes.com.br" target="_blank">Blogspot</a>
