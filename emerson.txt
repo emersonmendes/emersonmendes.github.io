@@ -4,6 +4,8 @@
 
 <p>Hey There!</p> 
 <p>I am Emerson Mendes :)</p> 
+
+My <a href="emerson.emendes@gmail.com" target="_blank">Email: emerson.emendes@gmail.com</a>
 My <a href="https://github.com/emersonmendes" target="_blank">GitHub</a>
 My <a href="https://www.linkedin.com/in/emersonemendes/" target="_blank">Linkedin</a>
 My <a href="https://linuxandjava.blogspot.com/" target="_blank">Blogspot</a>
