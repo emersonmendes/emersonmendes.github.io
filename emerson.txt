@@ -1,6 +1,6 @@
-<span id="a">emerson@mendes</span>:<span id="b">~</span><span id="c">$</span> cd /home/emerson
-<span id="a">emerson@mendes</span>:<span id="b">~</span><span id="c">$</span> cd /about_me
-<span id="a">emerson@mendes</span>:<span id="b">~</span><span id="c">$</span> cat emerson.txt<br/>
+<span id="a">root@emersonmendes</span>:<span id="b">~</span><span id="c">$</span> cd /home/emerson
+<span id="a">root@emersonmendes</span>:<span id="b">~</span><span id="c">$</span> cd /about-me
+<span id="a">root@emersonmendes</span>:<span id="b">~</span><span id="c">$</span> cat emerson.txt<br/>
 
 <p>Hey There!</p> 
 <p>I am Emerson Mendes :)</p> 
