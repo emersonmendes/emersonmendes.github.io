@@ -144,6 +144,13 @@ var Terminal = {
         
         if (cmd === "") {
             // Do nothing, just new prompt
+        } else if (cmd === "help") {
+            $("#console").append("<br/>");
+            $("#console").append("<span style='color: #0bc;'>Available commands:</span><br/><br/>");
+            $("#console").append("<span style='color: #0f0;'>snake</span> - Start the classic snake game<br/>");
+            $("#console").append("<span style='color: #0f0;'>clear</span> - Clear the terminal screen<br/>");
+            $("#console").append("<span style='color: #0f0;'>help</span> - Display this help message<br/>");
+            $("#console").append("<br/>");
         } else if (cmd === "snake") {
             Snake.start();
             Terminal.input = "";
@@ -152,6 +159,7 @@ var Terminal = {
              $("#console").html("");
         } else {
             $("#console").append("Command not found: " + cmd + "<br/>");
+            $("#console").append("Type 'help' for available commands.<br/>");
         }
 
         Terminal.input = "";
