@@ -5,7 +5,7 @@ var Typer = {
     speed: 2,
     file: "emerson.txt",
     init: function () {
-        accessCountimer = setInterval(function () {
+        Typer.accessCountimer = setInterval(function () {
             Typer.updLstChr();
         }, 500);
         $.get(Typer.file, function (data) {
@@ -61,18 +61,23 @@ var Terminal = {
 
     init: function () {
         Terminal.isActive = true;
+        console.log("Terminal initialized, isActive:", Terminal.isActive);
         $("#console").append("<br/>" + Terminal.prompt + "<span id='cmd-input'></span><span id='cursor'>|</span>");
         Terminal.attachEvents();
         Terminal.scrollToBottom();
-        clearInterval(Typer.accessCountimer); // Stop the old cursor blinker
+        if (Typer.accessCountimer) {
+            clearInterval(Typer.accessCountimer); // Stop the old cursor blinker
+        }
         setInterval(Terminal.blinkCursor, 500); // Start new cursor blinker
     },
 
     attachEvents: function () {
-        $(document).off("keydown keypress"); // Remove all previous handlers
+        console.log("Attaching terminal events...");
+        $(document).unbind("keydown").unbind("keypress"); // Remove all previous handlers (jQuery 1.4.2 compatible)
         
         // Handle special keys with keydown
-        $(document).on("keydown", function (e) {
+        $(document).bind("keydown", function (e) {
+            console.log("keydown event, isActive:", Terminal.isActive, "key:", e.which || e.keyCode);
             if (!Terminal.isActive) return;
             
             var key = e.which || e.keyCode;
@@ -88,7 +93,8 @@ var Terminal = {
         });
         
         // Handle printable characters with keypress (better for getting actual char)
-        $(document).on("keypress", function (e) {
+        $(document).bind("keypress", function (e) {
+            console.log("keypress event, isActive:", Terminal.isActive, "key:", e.which || e.keyCode);
             if (!Terminal.isActive) return;
             
             var key = e.which || e.keyCode;
@@ -171,8 +177,8 @@ var Snake = {
         Snake.render();
         Snake.interval = setInterval(Snake.loop, 150);
         
-        $(document).off("keydown keypress");
-        $(document).on("keydown", function(e) {
+        $(document).unbind("keydown").unbind("keypress");
+        $(document).bind("keydown", function(e) {
             Snake.handleInput(e);
         });
     },
