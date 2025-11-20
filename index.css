@@ -43,7 +43,6 @@ body {
     flex-direction: column;
     align-items: center;
     transform-style: preserve-3d;
-    animation: float 6s ease-in-out infinite;
 }
 
 /* Monitor Case (The big box) */
@@ -224,11 +223,6 @@ a:hover {
 #b { color: var(--term-pink); text-shadow: 0 0 5px var(--term-pink); }
 #k { animation: change 1s; font-weight: bold; }
 #op { color: #888888; }
-
-@keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-5px); }
-}
 
 @keyframes change {
     0%  { color: var(--term-green); text-shadow: 0 0 10px var(--term-green); }
