@@ -162,8 +162,8 @@ var Terminal = {
 
 var Snake = {
     isActive: false,
-    width: 20,
-    height: 20,
+    width: 18,
+    height: 15,
     grid: [],
     snake: [],
     direction: "right",

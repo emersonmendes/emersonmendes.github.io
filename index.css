@@ -50,6 +50,8 @@ body {
 .monitor-case {
     width: 100%;
     height: 100%;
+    min-height: 600px; /* Fixed minimum height */
+    max-height: 600px; /* Fixed maximum height */
     background: #2b2b2b;
     border-radius: 30px 30px 10px 10px;
     position: relative;
@@ -85,6 +87,7 @@ body {
 .monitor-bezel {
     width: 100%;
     height: 100%;
+    max-height: 540px; /* Fixed height for bezel */
     background: #000;
     border-radius: 4px; /* Inner corners sharp or slightly rounded */
     padding: 15px; /* Thickness of the black border around screen */
@@ -99,6 +102,7 @@ body {
 .crt-screen {
     width: 100%;
     height: 100%;
+    max-height: 510px; /* Fixed screen height */
     background-color: var(--screen-bg);
     position: relative;
     border-radius: 16px; /* Curvature of the tube */
@@ -130,6 +134,16 @@ body {
     font-size: 16px;
     line-height: 1.5;
     text-shadow: 0 0 2px rgba(255, 255, 255, 0.4);
+}
+
+#snake-game {
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+#snake-score, #snake-controls {
+    margin-top: 10px;
+    font-size: 14px;
 }
 
 /* Monitor Neck/Stand */
