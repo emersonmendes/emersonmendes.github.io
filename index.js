@@ -65,7 +65,12 @@ var Typer = {
             var rtn = new RegExp("\n", "g");
 
             $("#console").html(text.replace(rtn, "<br/>"));
-            window.scrollBy(0, 50);
+            var $screen = $(".screen");
+            if ($screen.length > 0) {
+                $screen.scrollTop($screen[0].scrollHeight);
+            } else {
+                window.scrollBy(0, 50);
+            }
         }
 
         if (key.preventDefault && key.keyCode != 122) {
