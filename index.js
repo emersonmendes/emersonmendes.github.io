@@ -3,20 +3,15 @@ var Typer = {
     accessCountimer: null,
     index: 0,
     speed: 2,
-    file: "",
-    accessCount: 0,
-    deniedCount: 0,
+    file: "emerson.txt",
     init: function () {
-        
-        accessCountimer = setInterval(function () { 
-            Typer.updLstChr(); 
+        accessCountimer = setInterval(function () {
+            Typer.updLstChr();
         }, 500);
-        
         $.get(Typer.file, function (data) {
             Typer.text = data;
             Typer.text = Typer.text.slice(0, Typer.text.length - 1);
         });
-        
     },
 
     content: function () {
@@ -29,38 +24,12 @@ var Typer = {
     },
 
     addText: function (key) {
-
-        if (key.keyCode == 18) {
-            Typer.accessCount++;
-
-            if (Typer.accessCount >= 3) {
-                Typer.makeAccess();
-            }
-        }
-
-        else if (key.keyCode == 20) {
-            Typer.deniedCount++;
-
-            if (Typer.deniedCount >= 3) {
-                Typer.makeDenied();
-            }
-        }
-
-        else if (key.keyCode == 27) {
-            Typer.hidepop();
-        }
-
-        else if (Typer.text) {
+        if (Typer.text) {
             var cont = Typer.content();
             if (cont.substring(cont.length - 1, cont.length) == "|")
                 $("#console").html($("#console").html().substring(0, cont.length - 1));
-            if (key.keyCode != 8) {
-                Typer.index += Typer.speed;
-            }
-            else {
-                if (Typer.index > 0)
-                    Typer.index -= Typer.speed;
-            }
+            
+            Typer.index += Typer.speed;
             var text = Typer.text.substring(0, Typer.index)
             var rtn = new RegExp("\n", "g");
 
@@ -72,43 +41,243 @@ var Typer = {
                 window.scrollBy(0, 50);
             }
         }
-
-        if (key.preventDefault && key.keyCode != 122) {
-            key.preventDefault()
-        };
-
-        if (key.keyCode != 122) { // otherway prevent keys default behavior
-            key.returnValue = false;
-        }
     },
 
     updLstChr: function () {
         var cont = this.content();
-
         if (cont.substring(cont.length - 1, cont.length) == "|")
             $("#console").html($("#console").html().substring(0, cont.length - 1));
-
         else
-            this.write("|"); // else write it
+            this.write("|");
     }
-}
+};
 
-function replaceUrls(text) {
-    var http = text.indexOf("http://");
-    var space = text.indexOf(".me ", http);
+var Terminal = {
+    input: "",
+    prompt: "<span id='a'>root@emersonmendes</span>:<span id='b'>~</span><span id='c'>$</span> ",
+    isActive: false,
+    history: [],
+    historyIndex: -1,
 
-    if (space != -1) {
-        var url = text.slice(http, space - 1);
-        return text.replace(url, "<a href=\"" + url + "\">" + url + "</a>");
+    init: function () {
+        Terminal.isActive = true;
+        $("#console").append("<br/>" + Terminal.prompt + "<span id='cmd-input'></span><span id='cursor'>|</span>");
+        Terminal.attachEvents();
+        Terminal.scrollToBottom();
+        clearInterval(Typer.accessCountimer); // Stop the old cursor blinker
+        setInterval(Terminal.blinkCursor, 500); // Start new cursor blinker
+    },
+
+    attachEvents: function () {
+        $(document).keydown(function (e) {
+            if (!Terminal.isActive) return;
+            
+            // Prevent default for special keys
+            if (e.keyCode == 8 || e.keyCode == 38 || e.keyCode == 40) {
+                 e.preventDefault();
+            }
+
+            if (e.keyCode == 13) { // Enter
+                Terminal.processCommand();
+            } else if (e.keyCode == 8) { // Backspace
+                Terminal.input = Terminal.input.slice(0, -1);
+                Terminal.updateInputDisplay();
+            } else if (e.key.length === 1) { // Printable characters
+                Terminal.input += e.key;
+                Terminal.updateInputDisplay();
+            }
+        });
+    },
+
+    updateInputDisplay: function () {
+        $("#cmd-input").text(Terminal.input);
+        Terminal.scrollToBottom();
+    },
+
+    scrollToBottom: function() {
+         var $screen = $(".crt-content");
+         if ($screen.length > 0) {
+             $screen.scrollTop($screen[0].scrollHeight);
+         }
+    },
+
+    blinkCursor: function() {
+        var cursor = $("#cursor");
+        if (cursor.css("visibility") === "visible") {
+            cursor.css("visibility", "hidden");
+        } else {
+            cursor.css("visibility", "visible");
+        }
+    },
+
+    processCommand: function () {
+        var cmd = Terminal.input.trim();
+        $("#console").append("<br/>"); // Move to next line after command
+        
+        if (cmd === "") {
+            // Do nothing, just new prompt
+        } else if (cmd === "snake") {
+            Snake.start();
+            Terminal.input = "";
+            Terminal.updateInputDisplay();
+            return; // Snake takes over
+        } else if (cmd === "clear") {
+             $("#console").html("");
+        } else {
+            $("#console").append("Command not found: " + cmd + "<br/>");
+        }
+
+        Terminal.input = "";
+        $("#console").append(Terminal.prompt + "<span id='cmd-input'></span><span id='cursor'>|</span>");
+        Terminal.updateInputDisplay();
     }
+};
 
-    else {
-        return text
+var Snake = {
+    isActive: false,
+    width: 20,
+    height: 20,
+    grid: [],
+    snake: [],
+    direction: "right",
+    food: null,
+    interval: null,
+    score: 0,
+
+    start: function () {
+        Terminal.isActive = false; // Disable terminal input
+        Snake.isActive = true;
+        $("#console").html(""); // Clear console for game
+        $("#console").append("<div id='snake-game'></div><div id='snake-score'>Score: 0</div><div id='snake-controls'>Controls: Arrow Keys | ESC to exit</div>");
+        
+        Snake.initGrid();
+        Snake.snake = [{x: 5, y: 5}, {x: 4, y: 5}, {x: 3, y: 5}];
+        Snake.direction = "right";
+        Snake.score = 0;
+        Snake.placeFood();
+        
+        Snake.render();
+        Snake.interval = setInterval(Snake.loop, 150);
+        
+        $(document).unbind("keydown").keydown(function(e) {
+            Snake.handleInput(e);
+        });
+    },
+
+    end: function () {
+        clearInterval(Snake.interval);
+        Snake.isActive = false;
+        $("#console").html("Game Over! Score: " + Snake.score + "<br/><br/>");
+        Terminal.init(); // Return to terminal
+    },
+
+    initGrid: function() {
+        // We will render using ASCII or pre-blocks
+        // Actually simple text based grid is easier to handle in this pre-existing structure
+        // Let's try to make it visual with characters
+    },
+
+    placeFood: function() {
+        var valid = false;
+        while (!valid) {
+            var x = Math.floor(Math.random() * Snake.width);
+            var y = Math.floor(Math.random() * Snake.height);
+            valid = true;
+            for (var i = 0; i < Snake.snake.length; i++) {
+                if (Snake.snake[i].x === x && Snake.snake[i].y === y) {
+                    valid = false;
+                    break;
+                }
+            }
+            if (valid) {
+                Snake.food = {x: x, y: y};
+            }
+        }
+    },
+
+    loop: function() {
+        var head = {x: Snake.snake[0].x, y: Snake.snake[0].y};
+        
+        if (Snake.direction === "right") head.x++;
+        else if (Snake.direction === "left") head.x--;
+        else if (Snake.direction === "up") head.y--;
+        else if (Snake.direction === "down") head.y++;
+
+        // Check collision
+        if (head.x < 0 || head.x >= Snake.width || head.y < 0 || head.y >= Snake.height || Snake.checkSelfCollision(head)) {
+            Snake.end();
+            return;
+        }
+
+        Snake.snake.unshift(head);
+
+        if (head.x === Snake.food.x && head.y === Snake.food.y) {
+            Snake.score++;
+            $("#snake-score").text("Score: " + Snake.score);
+            Snake.placeFood();
+        } else {
+            Snake.snake.pop();
+        }
+
+        Snake.render();
+    },
+
+    checkSelfCollision: function(head) {
+        for (var i = 0; i < Snake.snake.length; i++) {
+            if (Snake.snake[i].x === head.x && Snake.snake[i].y === head.y) {
+                return true;
+            }
+        }
+        return false;
+    },
+
+    handleInput: function(e) {
+        if (e.keyCode === 27) { // ESC
+            Snake.end();
+            return;
+        }
+        
+        if (e.keyCode === 37 && Snake.direction !== "right") Snake.direction = "left";
+        else if (e.keyCode === 38 && Snake.direction !== "down") Snake.direction = "up";
+        else if (e.keyCode === 39 && Snake.direction !== "left") Snake.direction = "right";
+        else if (e.keyCode === 40 && Snake.direction !== "up") Snake.direction = "down";
+    },
+
+    render: function() {
+        var output = "";
+        // Top border
+        output += "+";
+        for(var i=0; i<Snake.width; i++) output += "--";
+        output += "+<br/>";
+
+        for (var y = 0; y < Snake.height; y++) {
+            output += "|";
+            for (var x = 0; x < Snake.width; x++) {
+                var isSnake = false;
+                for (var s = 0; s < Snake.snake.length; s++) {
+                    if (Snake.snake[s].x === x && Snake.snake[s].y === y) {
+                        isSnake = true;
+                        break;
+                    }
+                }
+                
+                if (isSnake) output += "[]";
+                else if (Snake.food && Snake.food.x === x && Snake.food.y === y) output += "()";
+                else output += "&nbsp;&nbsp;"; // 2 spaces for aspect ratio
+            }
+            output += "|<br/>";
+        }
+        
+        // Bottom border
+        output += "+";
+        for(var i=0; i<Snake.width; i++) output += "--";
+        output += "+";
+
+        $("#snake-game").html(output);
     }
-}
+};
 
 Typer.speed = 3;
-Typer.file = "emerson.txt";
 Typer.init();
 
 var timer = setInterval("t();", 30);
@@ -117,5 +286,6 @@ function t() {
 
     if (Typer.index > Typer.text.length) {
         clearInterval(timer);
+        Terminal.init(); // Start terminal after typing is done
     }
 }
