@@ -108,7 +108,11 @@ var Terminal = {
     },
 
     updateInputDisplay: function () {
-        $("#cmd-input").text(Terminal.input);
+        // Always update the LAST occurrence of cmd-input
+        var allInputs = $("#cmd-input");
+        if (allInputs.length > 0) {
+            $(allInputs[allInputs.length - 1]).text(Terminal.input);
+        }
         Terminal.scrollToBottom();
     },
 
@@ -130,8 +134,13 @@ var Terminal = {
 
     processCommand: function () {
         var cmd = Terminal.input.trim();
-        $("#cursor").remove(); // Remove cursor before adding new line
-        $("#console").append("<br/>"); // Move to next line after command
+        
+        // Remove the current prompt line completely
+        $("#cmd-input").remove();
+        $("#cursor").remove();
+        
+        // Add the command that was typed
+        $("#console").append(cmd + "<br/>"); 
         
         if (cmd === "") {
             // Do nothing, just new prompt
