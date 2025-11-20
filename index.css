@@ -43,6 +43,7 @@ body {
     flex-direction: column;
     align-items: center;
     transform-style: preserve-3d;
+    flex-shrink: 0; /* Prevent shrinking */
 }
 
 /* Monitor Case (The big box) */
@@ -111,11 +112,13 @@ body {
     width: 100%;
     height: 100%;
     overflow-y: auto;
+    overflow-x: hidden; /* Prevent horizontal scroll */
     padding: 20px;
     box-sizing: border-box;
     scrollbar-width: none;
     position: relative;
     z-index: 2;
+    word-wrap: break-word; /* Wrap long words */
 }
 
 .crt-content::-webkit-scrollbar {
