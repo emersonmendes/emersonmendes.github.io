@@ -65,7 +65,7 @@ var Typer = {
             var rtn = new RegExp("\n", "g");
 
             $("#console").html(text.replace(rtn, "<br/>"));
-            var $screen = $(".screen");
+            var $screen = $(".crt-content");
             if ($screen.length > 0) {
                 $screen.scrollTop($screen[0].scrollHeight);
             } else {
