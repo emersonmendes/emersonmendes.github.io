@@ -69,11 +69,12 @@ var Terminal = {
     },
 
     attachEvents: function () {
-        $(document).keydown(function (e) {
+        $(document).off("keydown"); // Remove all previous keydown handlers
+        $(document).on("keydown", function (e) {
             if (!Terminal.isActive) return;
             
             // Prevent default for special keys
-            if (e.keyCode == 8 || e.keyCode == 38 || e.keyCode == 40) {
+            if (e.keyCode == 8 || e.keyCode == 38 || e.keyCode == 40 || e.keyCode == 13) {
                  e.preventDefault();
             }
 
@@ -82,7 +83,7 @@ var Terminal = {
             } else if (e.keyCode == 8) { // Backspace
                 Terminal.input = Terminal.input.slice(0, -1);
                 Terminal.updateInputDisplay();
-            } else if (e.key.length === 1) { // Printable characters
+            } else if (e.key && e.key.length === 1) { // Printable characters
                 Terminal.input += e.key;
                 Terminal.updateInputDisplay();
             }
@@ -112,6 +113,7 @@ var Terminal = {
 
     processCommand: function () {
         var cmd = Terminal.input.trim();
+        $("#cursor").remove(); // Remove cursor before adding new line
         $("#console").append("<br/>"); // Move to next line after command
         
         if (cmd === "") {
@@ -119,7 +121,6 @@ var Terminal = {
         } else if (cmd === "snake") {
             Snake.start();
             Terminal.input = "";
-            Terminal.updateInputDisplay();
             return; // Snake takes over
         } else if (cmd === "clear") {
              $("#console").html("");
@@ -129,7 +130,7 @@ var Terminal = {
 
         Terminal.input = "";
         $("#console").append(Terminal.prompt + "<span id='cmd-input'></span><span id='cursor'>|</span>");
-        Terminal.updateInputDisplay();
+        Terminal.scrollToBottom();
     }
 };
 
