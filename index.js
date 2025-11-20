@@ -69,23 +69,34 @@ var Terminal = {
     },
 
     attachEvents: function () {
-        $(document).off("keydown"); // Remove all previous keydown handlers
+        $(document).off("keydown keypress"); // Remove all previous handlers
+        
+        // Handle special keys with keydown
         $(document).on("keydown", function (e) {
             if (!Terminal.isActive) return;
             
-            // Prevent default for special keys
-            if (e.keyCode == 8 || e.keyCode == 38 || e.keyCode == 40 || e.keyCode == 13) {
-                 e.preventDefault();
-            }
-
-            if (e.keyCode == 13) { // Enter
+            var key = e.which || e.keyCode;
+            
+            if (key == 13) { // Enter
+                e.preventDefault();
                 Terminal.processCommand();
-            } else if (e.keyCode == 8) { // Backspace
+            } else if (key == 8) { // Backspace
+                e.preventDefault();
                 Terminal.input = Terminal.input.slice(0, -1);
                 Terminal.updateInputDisplay();
-            } else if (e.key && e.key.length === 1) { // Printable characters
-                Terminal.input += e.key;
+            }
+        });
+        
+        // Handle printable characters with keypress (better for getting actual char)
+        $(document).on("keypress", function (e) {
+            if (!Terminal.isActive) return;
+            
+            var key = e.which || e.keyCode;
+            if (key >= 32) { // Printable characters
+                var char = String.fromCharCode(key);
+                Terminal.input += char;
                 Terminal.updateInputDisplay();
+                e.preventDefault();
             }
         });
     },
@@ -160,7 +171,8 @@ var Snake = {
         Snake.render();
         Snake.interval = setInterval(Snake.loop, 150);
         
-        $(document).unbind("keydown").keydown(function(e) {
+        $(document).off("keydown keypress");
+        $(document).on("keydown", function(e) {
             Snake.handleInput(e);
         });
     },
@@ -233,15 +245,19 @@ var Snake = {
     },
 
     handleInput: function(e) {
-        if (e.keyCode === 27) { // ESC
+        if (!Snake.isActive) return;
+        
+        var key = e.which || e.keyCode;
+        
+        if (key === 27) { // ESC
             Snake.end();
             return;
         }
         
-        if (e.keyCode === 37 && Snake.direction !== "right") Snake.direction = "left";
-        else if (e.keyCode === 38 && Snake.direction !== "down") Snake.direction = "up";
-        else if (e.keyCode === 39 && Snake.direction !== "left") Snake.direction = "right";
-        else if (e.keyCode === 40 && Snake.direction !== "up") Snake.direction = "down";
+        if (key === 37 && Snake.direction !== "right") Snake.direction = "left";
+        else if (key === 38 && Snake.direction !== "down") Snake.direction = "up";
+        else if (key === 39 && Snake.direction !== "left") Snake.direction = "right";
+        else if (key === 40 && Snake.direction !== "up") Snake.direction = "down";
     },
 
     render: function() {
