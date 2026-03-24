@@ -4,7 +4,7 @@
 
 <p>Hey There!</p> 
 <p>I am Emerson Mendes :)</p>
-<p>Email: <a href="mailto:emerson.emendes@gmail.com" title="Click to copy and send email" onclick="if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText('emerson.emendes@gmail.com');}else{var temp=document.createElement('textarea');temp.value='emerson.emendes@gmail.com';document.body.appendChild(temp);temp.select();document.execCommand('copy');document.body.removeChild(temp);}">emerson.emendes@gmail.com</a></p> 
+<p>Email: <a href="mailto:emerson.emendes@gmail.com" title="Send email">emerson.emendes@gmail.com</a> [<a href="#" title="Copy email" onclick="if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText('emerson.emendes@gmail.com');}else{var temp=document.createElement('textarea');temp.value='emerson.emendes@gmail.com';document.body.appendChild(temp);temp.select();document.execCommand('copy');document.body.removeChild(temp);}return false;">copy</a>]</p> 
 My <a href="https://github.com/emersonmendes">GitHub</a><br/>
 My <a href="https://www.linkedin.com/in/emersonemendes">LinkedIn</a><br/>
 My <a href="https://blog.emersonmendes.com.br">Blog</a>
