@@ -168,15 +168,82 @@ var Typer = {
 
 var Terminal = {
     input: "",
-    prompt: "<span class='term-host'>root@emersonmendes</span>:<span class='term-wd'>~</span><span class='term-dollar'>$</span> ",
+    /** Virtual cwd; only /, /home, and /home/emerson exist. */
+    path: ["home", "emerson"],
     isActive: false,
     history: [],
     historyIndex: -1,
 
+    getWdDisplay: function () {
+        var p = Terminal.path;
+        if (p.length === 2 && p[0] === "home" && p[1] === "emerson") return "~";
+        if (p.length === 0) return "/";
+        return "/" + p.join("/");
+    },
+
+    getPromptHtml: function () {
+        return (
+            "<span class='term-host'>root@emersonmendes</span>:<span class='term-wd'>" +
+            Terminal.getWdDisplay() +
+            "</span><span class='term-dollar'>$</span> "
+        );
+    },
+
+    pathToSegments: function (absPath) {
+        var s = absPath.replace(/\/+$/, "");
+        if (!s || s === "/") return [];
+        return s.split("/").filter(function (x) {
+            return x.length > 0;
+        });
+    },
+
+    normalizeSegments: function (segments) {
+        var stack = [];
+        for (var i = 0; i < segments.length; i++) {
+            var part = segments[i];
+            if (part === "..") {
+                if (stack.length) stack.pop();
+            } else if (part !== "." && part !== "") stack.push(part);
+        }
+        return stack;
+    },
+
+    isValidPath: function (segments) {
+        if (segments.length === 0) return true;
+        if (segments.length === 1 && segments[0] === "home") return true;
+        if (segments.length === 2 && segments[0] === "home" && segments[1] === "emerson") return true;
+        return false;
+    },
+
+    listDir: function () {
+        var p = Terminal.path;
+        if (p.length === 0) return ["home"];
+        if (p.length === 1 && p[0] === "home") return ["emerson"];
+        if (p.length === 2 && p[0] === "home" && p[1] === "emerson") return ["emerson.txt"];
+        return [];
+    },
+
+    catEmersonContent: function () {
+        if (!Typer.text) {
+            $("#console").append("cat: emerson.txt: file not ready<br/>");
+            return;
+        }
+        var body = Typer.text.replace(/\n/g, "<br/>");
+        $("#console").append(body + "<br/>");
+    },
+
+    isProtectedEmersonRm: function (arg) {
+        var a = arg.replace(/^\.\//, "");
+        if (a === "/home/emerson/emerson.txt") return true;
+        if (a !== "emerson.txt") return false;
+        var p = Terminal.path;
+        return p.length === 2 && p[0] === "home" && p[1] === "emerson";
+    },
+
     init: function () {
         Terminal.isActive = true;
         console.log("Terminal initialized, isActive:", Terminal.isActive);
-        $("#console").append("<br/>" + Terminal.prompt + "<span id='cmd-input'></span><span id='cursor'>|</span>");
+        $("#console").append("<br/>" + Terminal.getPromptHtml() + "<span id='cmd-input'></span><span id='cursor'>|</span>");
         Terminal.attachEvents();
         Terminal.scrollToBottom();
         if (Typer.accessCountimer) {
@@ -250,36 +317,87 @@ var Terminal = {
 
     processCommand: function () {
         var cmd = Terminal.input.trim();
-        
-        // Remove the current prompt line completely
+
         $("#cmd-input").remove();
         $("#cursor").remove();
-        
-        // Add the command that was typed
-        $("#console").append(cmd + "<br/>"); 
-        
+
+        $("#console").append(cmd + "<br/>");
+
+        var tokens = cmd.length ? cmd.split(/\s+/) : [];
+        var name = tokens.length ? tokens[0].toLowerCase() : "";
+
         if (cmd === "") {
-            // Do nothing, just new prompt
-        } else if (cmd === "help") {
+        } else if (name === "help") {
             $("#console").append("<br/>");
             $("#console").append("<span style='color: #0bc;'>Available commands:</span><br/><br/>");
+            $("#console").append("<span style='color: #0f0;'>cd</span> - Change directory (try <span style='color:#0f0'>cd ..</span>)<br/>");
+            $("#console").append("<span style='color: #0f0;'>ls</span> - List directory contents<br/>");
+            $("#console").append("<span style='color: #0f0;'>cat</span> - Print a file (e.g. <span style='color:#0f0'>cat emerson.txt</span>)<br/>");
+            $("#console").append("<span style='color: #0f0;'>rm</span> - Remove a file<br/>");
             $("#console").append("<span style='color: #0f0;'>snake</span> - Start the classic snake game<br/>");
             $("#console").append("<span style='color: #0f0;'>clear</span> - Clear the terminal screen<br/>");
-            $("#console").append("<span style='color: #0f0;'>help</span> - Display this help message<br/>");
+            $("#console").append("<span style='color: #0f0;'>help</span> - Show this help<br/>");
             $("#console").append("<br/>");
-        } else if (cmd === "snake") {
+        } else if (name === "cd") {
+            var arg = (tokens.slice(1).join(" ") || "").replace(/^["']|["']$/g, "");
+            if (!arg || arg === "~") {
+                Terminal.path = ["home", "emerson"];
+            } else if (arg === "..") {
+                if (Terminal.path.length > 0) Terminal.path.pop();
+            } else if (arg === ".") {
+            } else {
+                var target;
+                if (arg.charAt(0) === "/") {
+                    target = Terminal.normalizeSegments(Terminal.pathToSegments(arg));
+                } else {
+                    target = Terminal.normalizeSegments(Terminal.path.concat(arg.split("/")));
+                }
+                if (Terminal.isValidPath(target)) {
+                    Terminal.path = target;
+                } else {
+                    $("#console").append("cd: " + arg + ": No such file or directory<br/>");
+                }
+            }
+        } else if (name === "ls") {
+            if (tokens.length > 1) {
+                $("#console").append("ls: too many arguments<br/>");
+            } else {
+                var names = Terminal.listDir();
+                $("#console").append(names.join("  ") + "<br/>");
+            }
+        } else if (name === "cat") {
+            var file = tokens.slice(1).join(" ").replace(/^["']|["']$/g, "");
+            if (!file) {
+                $("#console").append("cat: missing file operand<br/>");
+            } else if (file !== "emerson.txt") {
+                $("#console").append("cat: " + file + ": No such file or directory<br/>");
+            } else if (Terminal.path.length === 2 && Terminal.path[0] === "home" && Terminal.path[1] === "emerson") {
+                Terminal.catEmersonContent();
+            } else {
+                $("#console").append("cat: emerson.txt: No such file or directory<br/>");
+            }
+        } else if (name === "rm") {
+            var targetFile = tokens.slice(1).join(" ").replace(/^["']|["']$/g, "");
+            if (!targetFile) {
+                $("#console").append("rm: missing operand<br/>");
+            } else if (Terminal.isProtectedEmersonRm(targetFile)) {
+                $("#console").append('Nice try, but this file is unremovable.<br/>');
+            } else {
+                $("#console").append("rm: cannot remove '" + targetFile + "': No such file or directory<br/>");
+            }
+        } else if (name === "snake") {
             Snake.start();
             Terminal.input = "";
-            return; // Snake takes over
-        } else if (cmd === "clear") {
-             $("#console").html("");
+            return;
+        } else if (name === "clear") {
+            $("#console").html("");
         } else {
             $("#console").append("Command not found: " + cmd + "<br/>");
             $("#console").append("Type 'help' for available commands.<br/>");
         }
 
         Terminal.input = "";
-        $("#console").append(Terminal.prompt + "<span id='cmd-input'></span><span id='cursor'>|</span>");
+        $("#console").append(Terminal.getPromptHtml() + "<span id='cmd-input'></span><span id='cursor'>|</span>");
         Terminal.scrollToBottom();
     }
 };
@@ -441,7 +559,7 @@ var timer = setInterval("t();", 30);
 function t() {
     Typer.addText({ "keyCode": 123748 });
 
-    if (Typer.index > Typer.text.length) {
+    if (Typer.text && Typer.index > Typer.text.length) {
         clearInterval(timer);
         Terminal.init(); // Start terminal after typing is done
     }
