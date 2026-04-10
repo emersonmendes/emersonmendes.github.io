@@ -16,14 +16,15 @@ body {
         linear-gradient(45deg, #1a1a1a 25%, transparent 25%, transparent 75%, #1a1a1a 75%, #1a1a1a);
     background-size: 20px 20px;
     background-position: 0 0, 10px 10px;
-    height: 100vh;
-    width: 100vw;
-    overflow: hidden;
+    min-height: 100vh;
+    width: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
     display: flex;
     justify-content: center;
     align-items: center;
     font-family: 'Courier New', Courier, monospace;
-    perspective: 1000px; /* Enable 3D perspective */
+    /* perspective on body breaks hit-testing with transformed children in several browsers */
 }
 
 .scene {
@@ -32,7 +33,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    transform-style: preserve-3d;
+    /* No perspective / preserve-3d: 3D transforms break pointer hit-testing (often top half dead) */
 }
 
 .monitor {
@@ -42,11 +43,10 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    transform-style: preserve-3d;
     flex-shrink: 0; /* Prevent shrinking */
 }
 
-/* Monitor Case (The big box) */
+/* Monitor Case — flat (no rotateX): keeps clicks/selection aligned with pixels */
 .monitor-case {
     width: 100%;
     height: 100%;
@@ -64,11 +64,11 @@ body {
     padding: 30px;
     box-sizing: border-box;
     z-index: 2;
-    transform: rotateX(2deg); /* Slight tilt up */
     background: linear-gradient(to bottom, #333, #222);
+    pointer-events: none;
 }
 
-/* Back of the monitor (simulated depth) */
+/* Back of the monitor (simulated depth) — 2D only */
 .monitor-case::before {
     content: '';
     position: absolute;
@@ -79,12 +79,12 @@ body {
     background: #1a1a1a;
     z-index: -1;
     border-radius: 20px;
-    transform: translateZ(-50px);
     box-shadow: 0 20px 50px rgba(0,0,0,0.8);
 }
 
 /* Monitor Bezel (The frame around the screen) */
 .monitor-bezel {
+    pointer-events: auto;
     width: 100%;
     height: 100%;
     max-height: 620px; /* Fixed height for bezel */
@@ -111,25 +111,107 @@ body {
     border: 1px solid #333;
 }
 
-/* Content Container with Scroll */
-.crt-content {
-    width: 100%;
-    height: 100%;
-    max-height: 590px; /* Match screen height */
-    overflow-y: auto;
-    overflow-x: hidden; /* Prevent horizontal scroll */
-    padding: 20px;
-    box-sizing: border-box;
-    scrollbar-width: none;
-    position: absolute; /* Changed to absolute */
+/* Flex wrapper: content + virtual scrollbar (avoids overflow/height bugs) */
+.crt-inner {
+    position: absolute;
     top: 0;
     left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
     z-index: 20;
-    word-wrap: break-word; /* Wrap long words */
+    pointer-events: auto;
+    min-height: 0;
+}
+
+/* Content Container with Scroll — must stack above .crt-scrollbar so long URLs
+   (GitHub/LinkedIn) are not eaten by the scrollbar column hit-testing */
+.crt-content {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 20px;
+    padding-right: 16px;
+    box-sizing: border-box;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+    outline: none;
+    pointer-events: auto;
+    position: relative;
+    z-index: 3;
 }
 
 .crt-content::-webkit-scrollbar {
     display: none;
+}
+
+.crt-content,
+#console {
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+/* Retro virtual scrollbar — z-index below .crt-content so any subpixel overlap
+   does not steal clicks from long link text */
+.crt-scrollbar {
+    flex-shrink: 0;
+    width: 14px;
+    background: linear-gradient(to right, rgba(0,0,0,0.45), rgba(30,30,30,0.9));
+    border-left: 1px solid #222;
+    box-shadow: inset 2px 0 4px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+    position: relative;
+    z-index: 1;
+}
+
+.crt-scrollbar-track {
+    flex: 1;
+    margin: 8px 3px;
+    background: #0a0a0a;
+    border-radius: 4px;
+    border: 1px solid #333;
+    box-shadow: inset 0 0 6px rgba(0,0,0,0.9);
+    position: relative;
+    min-height: 40px;
+    overflow: hidden;
+}
+
+.crt-scrollbar-thumb {
+    position: absolute;
+    left: 1px;
+    right: 1px;
+    width: auto;
+    min-height: 24px;
+    padding: 0;
+    border: none;
+    border-radius: 3px;
+    background: linear-gradient(to right, #2a4a2a, #1a3a1a);
+    box-shadow:
+        0 0 6px rgba(0, 255, 100, 0.35),
+        inset 0 1px 0 rgba(255,255,255,0.12);
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.crt-scrollbar-thumb:hover {
+    background: linear-gradient(to right, #3a6a3a, #2a5a2a);
+    box-shadow:
+        0 0 10px rgba(0, 255, 120, 0.5),
+        inset 0 1px 0 rgba(255,255,255,0.15);
+}
+
+.crt-scrollbar.is-hidden .crt-scrollbar-thumb {
+    opacity: 0.35;
+    pointer-events: none;
 }
 
 #console {
@@ -137,6 +219,13 @@ body {
     font-size: 16px;
     line-height: 1.5;
     text-shadow: 0 0 2px rgba(255, 255, 255, 0.4);
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+#console a {
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 #snake-game {
@@ -159,7 +248,6 @@ body {
     margin-top: -10px; /* Hide connection */
     z-index: 1;
     position: relative;
-    transform: translateZ(-20px);
     box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
     background: linear-gradient(to right, #1a1a1a, #333, #1a1a1a);
 }
@@ -170,7 +258,6 @@ body {
     height: 45px;
     background: #2b2b2b;
     border-radius: 4px 4px 10px 10px;
-    transform: translateZ(-10px);
     box-shadow: 
         0 5px 10px rgba(0,0,0,0.5),
         inset 0 1px 2px rgba(255,255,255,0.1);
@@ -179,7 +266,7 @@ body {
     background: linear-gradient(to bottom, #333, #222);
 }
 
-/* Screen Overlay Effects */
+/* Screen Overlay Effects — painted above .crt-inner, must never capture input */
 .scanlines {
     position: absolute;
     top: 0;
@@ -194,8 +281,8 @@ body {
         rgba(0,0,0,0.1)
     );
     background-size: 100% 4px;
-    pointer-events: none;
-    z-index: 10;
+    pointer-events: none !important;
+    z-index: 30;
     animation: scroll 10s linear infinite;
 }
 
@@ -209,7 +296,7 @@ body {
     right: 0;
     background: rgba(18, 16, 16, 0.1);
     opacity: 0;
-    z-index: 10;
+    z-index: 36;
     pointer-events: none;
     animation: flicker 0.15s infinite;
     border-radius: 16px;
@@ -225,7 +312,7 @@ body {
     width: 100%;
     height: 100%;
     background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 40%);
-    z-index: 15;
+    z-index: 35;
     pointer-events: none;
     border-radius: 16px;
 }
@@ -235,15 +322,18 @@ a {
     color: var(--term-blue);
     text-decoration: none;
     text-shadow: 0 0 5px var(--term-blue);
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
 }
 a:hover {
     color: #fff;
     text-shadow: 0 0 8px #fff;
 }
-#a { color: var(--term-green); text-shadow: 0 0 5px var(--term-green); }
-#c { color: var(--term-blue); text-shadow: 0 0 5px var(--term-blue); }
-#b { color: var(--term-pink); text-shadow: 0 0 5px var(--term-pink); }
-#k { animation: change 1s; font-weight: bold; }
+.term-host { color: var(--term-green); text-shadow: 0 0 5px var(--term-green); }
+.term-dollar { color: var(--term-blue); text-shadow: 0 0 5px var(--term-blue); }
+.term-wd { color: var(--term-pink); text-shadow: 0 0 5px var(--term-pink); }
+.term-quote { animation: change 1s; font-weight: bold; }
 #op { color: #888888; }
 
 @keyframes change {

@@ -1,3 +1,116 @@
+/** Syncs the on-screen scrollbar thumb with #crt-content and supports drag-to-scroll */
+var CrtScroll = {
+    dragging: false,
+    dragStartY: 0,
+    dragStartScroll: 0,
+
+    el: function () {
+        return document.getElementById("crt-content");
+    },
+
+    update: function () {
+        var content = $("#crt-content");
+        var track = $(".crt-scrollbar-track");
+        var thumb = $("#crt-scrollbar-thumb");
+        var wrap = $("#crt-scrollbar");
+        if (!content.length || !track.length || !thumb.length) return;
+
+        var el = content[0];
+        var sh = el.scrollHeight;
+        var ch = el.clientHeight;
+        var trackH = track.height();
+        if (trackH < 1) return;
+
+        if (sh <= ch) {
+            wrap.addClass("is-hidden");
+            thumb.css({ top: 0, height: Math.max(trackH - 2, 24) });
+            return;
+        }
+        wrap.removeClass("is-hidden");
+        var ratio = ch / sh;
+        var thumbH = Math.max(Math.floor(trackH * ratio), 24);
+        var maxTop = Math.max(trackH - thumbH, 0);
+        var maxScroll = sh - ch;
+        var scrollRatio = maxScroll > 0 ? el.scrollTop / maxScroll : 0;
+        var top = Math.round(scrollRatio * maxTop);
+        thumb.css({ height: thumbH, top: top });
+    },
+
+    init: function () {
+        var self = this;
+        var $content = $("#crt-content");
+        var $thumb = $("#crt-scrollbar-thumb");
+        var $track = $(".crt-scrollbar-track");
+
+        $content.bind("scroll", function () {
+            self.update();
+        });
+
+        $(window).bind("resize", function () {
+            self.update();
+        });
+
+        $thumb.bind("mousedown", function (e) {
+            e.preventDefault();
+            var el = self.el();
+            if (!el || el.scrollHeight <= el.clientHeight) return;
+            self.dragging = true;
+            self.dragStartY = e.pageY;
+            self.dragStartScroll = el.scrollTop;
+            $(document).bind("mousemove.crtscr", function (ev) {
+                if (!self.dragging) return;
+                var c = self.el();
+                var tr = $(".crt-scrollbar-track");
+                if (!c || !tr.length) return;
+                var trackH = tr.height();
+                var th = $thumb.outerHeight() || 24;
+                var maxTop = Math.max(trackH - th, 0);
+                var maxScroll = c.scrollHeight - c.clientHeight;
+                if (maxTop < 1 || maxScroll < 1) return;
+                var dy = ev.pageY - self.dragStartY;
+                var dScroll = (dy / maxTop) * maxScroll;
+                c.scrollTop = self.dragStartScroll + dScroll;
+            });
+            $(document).bind("mouseup.crtscr", function () {
+                self.dragging = false;
+                $(document).unbind(".crtscr");
+            });
+        });
+
+        $track.bind("click", function (e) {
+            if ($(e.target).closest(".crt-scrollbar-thumb").length) return;
+            var el = self.el();
+            var tr = $track;
+            if (!el || el.scrollHeight <= el.clientHeight) return;
+            var offset = tr.offset();
+            var y = e.pageY - offset.top;
+            var trackH = tr.height();
+            var th = $thumb.outerHeight() || 24;
+            var maxTop = Math.max(trackH - th, 0);
+            var maxScroll = el.scrollHeight - el.clientHeight;
+            var targetTop = Math.max(0, Math.min(y - th / 2, maxTop));
+            el.scrollTop = maxTop > 0 ? (targetTop / maxTop) * maxScroll : 0;
+            self.update();
+        });
+
+        var consoleEl = document.getElementById("console");
+        if (consoleEl && window.MutationObserver) {
+            var obs = new MutationObserver(function () {
+                self.update();
+            });
+            obs.observe(consoleEl, { childList: true, subtree: true, characterData: true });
+        } else {
+            setInterval(function () {
+                self.update();
+            }, 500);
+        }
+
+        setTimeout(function () {
+            self.update();
+        }, 0);
+    }
+};
+
 var Typer = {
     text: null,
     accessCountimer: null,
@@ -34,9 +147,10 @@ var Typer = {
             var rtn = new RegExp("\n", "g");
 
             $("#console").html(text.replace(rtn, "<br/>"));
-            var $screen = $(".crt-content");
+            var $screen = $("#crt-content");
             if ($screen.length > 0) {
                 $screen.scrollTop($screen[0].scrollHeight);
+                CrtScroll.update();
             } else {
                 window.scrollBy(0, 50);
             }
@@ -54,7 +168,7 @@ var Typer = {
 
 var Terminal = {
     input: "",
-    prompt: "<span id='a'>root@emersonmendes</span>:<span id='b'>~</span><span id='c'>$</span> ",
+    prompt: "<span class='term-host'>root@emersonmendes</span>:<span class='term-wd'>~</span><span class='term-dollar'>$</span> ",
     isActive: false,
     history: [],
     historyIndex: -1,
@@ -69,6 +183,7 @@ var Terminal = {
             clearInterval(Typer.accessCountimer); // Stop the old cursor blinker
         }
         setInterval(Terminal.blinkCursor, 500); // Start new cursor blinker
+        CrtScroll.update();
     },
 
     attachEvents: function () {
@@ -117,9 +232,10 @@ var Terminal = {
     },
 
     scrollToBottom: function() {
-         var $screen = $(".crt-content");
+         var $screen = $("#crt-content");
          if ($screen.length > 0) {
              $screen.scrollTop($screen[0].scrollHeight);
+             CrtScroll.update();
          }
     },
 
@@ -318,6 +434,7 @@ var Snake = {
 };
 
 Typer.speed = 3;
+CrtScroll.init();
 Typer.init();
 
 var timer = setInterval("t();", 30);

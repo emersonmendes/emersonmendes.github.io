@@ -1,6 +1,6 @@
-<span id="a">root@emersonmendes</span>:<span id="b">~</span><span id="c">$</span> cd /home/emerson
-<span id="a">root@emersonmendes</span>:<span id="b">~</span><span id="c">$</span> cd /about-me
-<span id="a">root@emersonmendes</span>:<span id="b">~</span><span id="c">$</span> cat emerson.txt<br/>
+<span class="term-host">root@emersonmendes</span>:<span class="term-wd">~</span><span class="term-dollar">$</span> cd /home/emerson
+<span class="term-host">root@emersonmendes</span>:<span class="term-wd">~</span><span class="term-dollar">$</span> cd /about-me
+<span class="term-host">root@emersonmendes</span>:<span class="term-wd">~</span><span class="term-dollar">$</span> cat emerson.txt<br/>
 
 <p>Hey There!</p> 
 <p>I am Emerson Mendes :)</p>
@@ -9,6 +9,6 @@ My <a href="https://github.com/emersonmendes">GitHub</a><br/>
 My <a href="https://www.linkedin.com/in/emersonemendes">LinkedIn</a><br/>
 My <a href="https://blog.emersonmendes.com.br">Blog</a>
 
-My favorite code quote:<br/><br/>"<span id="k">Code is like humor. When you have to explain it, it’s bad</span>" - Cory House
+My favorite code quote:<br/><br/>"<span class="term-quote">Code is like humor. When you have to explain it, it’s bad</span>" - Cory House
 
 <p>Cheers!</p>
