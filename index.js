@@ -416,6 +416,11 @@ var Snake = {
     start: function () {
         Terminal.isActive = false; // Disable terminal input
         Snake.isActive = true;
+        $(".crt-inner").addClass("crt-snake-mode");
+        var $crt = $("#crt-content");
+        if ($crt.length) {
+            $crt[0].scrollTop = 0;
+        }
         $("#console").html(""); // Clear console for game
         $("#console").append("<div id='snake-game'></div><div id='snake-score'>Score: 0</div><div id='snake-controls'>Controls: Arrow Keys | ESC to exit</div>");
         
@@ -437,6 +442,7 @@ var Snake = {
     end: function () {
         clearInterval(Snake.interval);
         Snake.isActive = false;
+        $(".crt-inner").removeClass("crt-snake-mode");
         $("#console").html("Game Over! Score: " + Snake.score + "<br/><br/>");
         Terminal.init(); // Return to terminal
     },

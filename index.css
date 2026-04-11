@@ -126,6 +126,15 @@ body {
     min-height: 0;
 }
 
+/* Snake game: no scroll area, hide the virtual scrollbar column */
+.crt-inner.crt-snake-mode .crt-scrollbar {
+    display: none;
+}
+
+.crt-inner.crt-snake-mode #crt-content {
+    overflow-y: hidden;
+}
+
 /* Content Container with Scroll — must stack above .crt-scrollbar so long URLs
    (GitHub/LinkedIn) are not eaten by the scrollbar column hit-testing */
 .crt-content {
