@@ -383,3 +383,146 @@ a:hover {
     0% { background-position: 0 0; }
     100% { background-position: 0 100%; }
 }
+
+/* -------------------------------------------------------------------------- */
+/* Mobile: tela cheia, área tocável para foco e campo que abre o teclado       */
+/* Desktop: inalterado (regras abaixo só dentro do media query)               */
+/* -------------------------------------------------------------------------- */
+
+.terminal-mobile-input {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 200;
+    display: none !important;
+    box-sizing: border-box;
+    margin: 0;
+    width: 100%;
+    border: none;
+    border-top: 1px solid #333;
+    padding: 12px 16px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 16px;
+    line-height: 1.4;
+    color: #0f0;
+    background: #0a0a0a;
+    text-shadow: 0 0 4px rgba(0, 255, 0, 0.5);
+    outline: none;
+}
+
+.terminal-mobile-input::placeholder {
+    color: #555;
+    text-shadow: none;
+}
+
+@media (max-width: 768px) {
+    body.mobile-term-active .terminal-mobile-input {
+        display: block !important;
+    }
+
+    body.mobile-snake .terminal-mobile-input {
+        display: none !important;
+    }
+
+    html {
+        height: 100%;
+        height: 100dvh;
+    }
+
+    body {
+        flex-direction: column;
+        min-height: 100%;
+        min-height: 100dvh;
+        min-height: -webkit-fill-available;
+        align-items: stretch;
+        justify-content: flex-start;
+        padding: 0;
+        padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+        box-sizing: border-box;
+    }
+
+    .scene {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        min-height: 0;
+        flex: 1 1 auto;
+        display: flex;
+        align-items: stretch;
+        justify-content: center;
+        padding: 8px 8px 0;
+        box-sizing: border-box;
+    }
+
+    .monitor {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        min-height: 0;
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .monitor-case {
+        width: 100%;
+        min-height: 0;
+        max-height: none;
+        height: auto;
+        flex: 1 1 auto;
+        border-radius: 16px 16px 8px 8px;
+        padding: 12px;
+        pointer-events: auto;
+    }
+
+    .monitor-bezel {
+        max-height: none;
+        height: 100%;
+        min-height: 0;
+        flex: 1 1 auto;
+        padding: 10px;
+        border-radius: 12px;
+    }
+
+    .crt-screen {
+        max-height: none;
+        height: 100%;
+        min-height: 180px;
+        flex: 1 1 auto;
+        border-radius: 10px;
+    }
+
+    .crt-screen::before,
+    .crt-screen::after {
+        border-radius: 10px;
+    }
+
+    /* Oculta base do monitor para ganhar área útil em retrato */
+    .monitor-neck,
+    .monitor-base {
+        display: none;
+    }
+
+    body.mobile-term-active .scene {
+        padding-bottom: 0;
+    }
+
+    body.mobile-term-active .monitor {
+        margin-bottom: 0;
+    }
+
+    #console {
+        font-size: 15px;
+    }
+}
+
+/* Teclado aberto: browsers modernos expõem dynamic viewport */
+@supports (height: 100dvh) {
+    @media (max-width: 768px) {
+        body.mobile-term-active .scene {
+            min-height: calc(100dvh - 56px - env(safe-area-inset-bottom, 0px));
+        }
+    }
+}

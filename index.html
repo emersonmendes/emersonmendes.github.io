@@ -1,6 +1,8 @@
 <html>
 
     <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <title>Emerson Mendes</title>
         <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
         <link rel="stylesheet" type="text/css" href="index.css">
@@ -30,6 +32,11 @@
                 <div class="monitor-base"></div>
             </div>
         </div>
+        <!-- Mobile: foco aqui abre o teclado virtual; valor é espelhado no terminal (só CSS/JS mobile) -->
+        <input type="text" id="terminal-mobile-input" class="terminal-mobile-input"
+            autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+            enterkeyhint="go" inputmode="text" aria-label="Entrada do terminal"
+            placeholder="Toque na tela ou aqui para abrir o teclado">
         <script type="text/javascript" src="index.js"></script>
     </body>
 

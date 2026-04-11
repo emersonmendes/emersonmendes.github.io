@@ -1,4 +1,68 @@
 /** Syncs the on-screen scrollbar thumb with #crt-content and supports drag-to-scroll */
+/** Captura de teclado virtual em viewports estreitos: input nativo + espelho em Terminal.input */
+var MobileTerm = {
+    crtTapBound: false,
+
+    useMobileCapture: function () {
+        try {
+            return window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
+        } catch (e) {
+            return false;
+        }
+    },
+
+    el: function () {
+        return document.getElementById("terminal-mobile-input");
+    },
+
+    clear: function () {
+        var inp = MobileTerm.el();
+        if (inp) inp.value = "";
+    },
+
+    syncBodyClass: function () {
+        if (!document.body) return;
+        if (MobileTerm.useMobileCapture() && Terminal.isActive && !Snake.isActive) {
+            document.body.classList.add("mobile-term-active");
+        } else {
+            document.body.classList.remove("mobile-term-active");
+        }
+    },
+
+    bindCrtTapToFocus: function () {
+        if (MobileTerm.crtTapBound) return;
+        MobileTerm.crtTapBound = true;
+        $("#crt-content").bind("click", function () {
+            if (!MobileTerm.useMobileCapture() || !Terminal.isActive || Snake.isActive) return;
+            var inp = MobileTerm.el();
+            if (inp) inp.focus();
+        });
+    },
+
+    attachInputHandlers: function () {
+        var $inp = $("#terminal-mobile-input");
+        $inp.unbind("input.mobileterm keydown.mobileterm");
+        $inp.bind("input.mobileterm", function () {
+            if (!Terminal.isActive) return;
+            Terminal.input = $inp.val() || "";
+            Terminal.updateInputDisplay();
+        });
+        $inp.bind("keydown.mobileterm", function (e) {
+            if (!Terminal.isActive) return;
+            var key = e.which || e.keyCode;
+            if (key === 13) {
+                e.preventDefault();
+                Terminal.processCommand();
+            }
+        });
+    },
+
+    detach: function () {
+        $("#terminal-mobile-input").unbind(".mobileterm");
+        MobileTerm.clear();
+    }
+};
+
 var CrtScroll = {
     dragging: false,
     dragStartY: 0,
@@ -244,6 +308,9 @@ var Terminal = {
         Terminal.isActive = true;
         console.log("Terminal initialized, isActive:", Terminal.isActive);
         $("#console").append("<br/>" + Terminal.getPromptHtml() + "<span id='cmd-input'></span><span id='cursor'>|</span>");
+        MobileTerm.clear();
+        MobileTerm.syncBodyClass();
+        MobileTerm.bindCrtTapToFocus();
         Terminal.attachEvents();
         Terminal.scrollToBottom();
         if (Typer.accessCountimer) {
@@ -251,36 +318,46 @@ var Terminal = {
         }
         setInterval(Terminal.blinkCursor, 500); // Start new cursor blinker
         CrtScroll.update();
+        if (MobileTerm.useMobileCapture()) {
+            setTimeout(function () {
+                var inp = MobileTerm.el();
+                if (inp && Terminal.isActive && !Snake.isActive) inp.focus();
+            }, 400);
+        }
     },
 
     attachEvents: function () {
         console.log("Attaching terminal events...");
-        $(document).unbind("keydown").unbind("keypress"); // Remove all previous handlers (jQuery 1.4.2 compatible)
-        
-        // Handle special keys with keydown
+        $(document).unbind("keydown").unbind("keypress");
+        MobileTerm.detach();
+
+        if (MobileTerm.useMobileCapture()) {
+            MobileTerm.attachInputHandlers();
+            return;
+        }
+
         $(document).bind("keydown", function (e) {
             console.log("keydown event, isActive:", Terminal.isActive, "key:", e.which || e.keyCode);
             if (!Terminal.isActive) return;
-            
+
             var key = e.which || e.keyCode;
-            
-            if (key == 13) { // Enter
+
+            if (key == 13) {
                 e.preventDefault();
                 Terminal.processCommand();
-            } else if (key == 8) { // Backspace
+            } else if (key == 8) {
                 e.preventDefault();
                 Terminal.input = Terminal.input.slice(0, -1);
                 Terminal.updateInputDisplay();
             }
         });
-        
-        // Handle printable characters with keypress (better for getting actual char)
+
         $(document).bind("keypress", function (e) {
             console.log("keypress event, isActive:", Terminal.isActive, "key:", e.which || e.keyCode);
             if (!Terminal.isActive) return;
-            
+
             var key = e.which || e.keyCode;
-            if (key >= 32) { // Printable characters
+            if (key >= 32) {
                 var char = String.fromCharCode(key);
                 Terminal.input += char;
                 Terminal.updateInputDisplay();
@@ -388,6 +465,7 @@ var Terminal = {
         } else if (name === "snake") {
             Snake.start();
             Terminal.input = "";
+            MobileTerm.clear();
             return;
         } else if (name === "clear") {
             $("#console").html("");
@@ -397,6 +475,7 @@ var Terminal = {
         }
 
         Terminal.input = "";
+        MobileTerm.clear();
         $("#console").append(Terminal.getPromptHtml() + "<span id='cmd-input'></span><span id='cursor'>|</span>");
         Terminal.scrollToBottom();
     }
@@ -416,6 +495,8 @@ var Snake = {
     start: function () {
         Terminal.isActive = false; // Disable terminal input
         Snake.isActive = true;
+        MobileTerm.detach();
+        if (document.body) document.body.classList.add("mobile-snake");
         $(".crt-inner").addClass("crt-snake-mode");
         var $crt = $("#crt-content");
         if ($crt.length) {
@@ -442,6 +523,7 @@ var Snake = {
     end: function () {
         clearInterval(Snake.interval);
         Snake.isActive = false;
+        if (document.body) document.body.classList.remove("mobile-snake");
         $(".crt-inner").removeClass("crt-snake-mode");
         $("#console").html("Game Over! Score: " + Snake.score + "<br/><br/>");
         Terminal.init(); // Return to terminal
@@ -560,6 +642,13 @@ var Snake = {
 Typer.speed = 3;
 CrtScroll.init();
 Typer.init();
+
+$(window).bind("resize", function () {
+    MobileTerm.syncBodyClass();
+    if (Terminal.isActive && !Snake.isActive) {
+        Terminal.attachEvents();
+    }
+});
 
 var timer = setInterval("t();", 30);
 function t() {
