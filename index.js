@@ -32,11 +32,12 @@ var MobileTerm = {
     bindCrtTapToFocus: function () {
         if (MobileTerm.crtTapBound) return;
         MobileTerm.crtTapBound = true;
-        $("#crt-content").bind("click", function () {
+        var focusKb = function () {
             if (!MobileTerm.useMobileCapture() || !Terminal.isActive || Snake.isActive) return;
             var inp = MobileTerm.el();
             if (inp) inp.focus();
-        });
+        };
+        $("#crt-content").bind("click", focusKb).bind("touchend", focusKb);
     },
 
     attachInputHandlers: function () {
