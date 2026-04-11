@@ -1,12 +1,12 @@
 <span class="term-host">root@emersonmendes</span>:<span class="term-wd">~</span><span class="term-dollar">$</span> cd /home/emerson
 <span class="term-host">root@emersonmendes</span>:<span class="term-wd">~</span><span class="term-dollar">$</span> ls
+<span class="term-host"></span>emerson.txt
 <span class="term-host">root@emersonmendes</span>:<span class="term-wd">~</span><span class="term-dollar">$</span> cat emerson.txt<br/>
 
-<p>Hey There!</p> 
+Hey There!
 <p>I am Emerson Mendes :)</p>
-<p>Email: <a href="mailto:emerson.emendes@gmail.com" title="Send email">emerson.emendes@gmail.com</a> [<a href="#" title="Copy email" onclick="if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText('emerson.emendes@gmail.com');}else{var temp=document.createElement('textarea');temp.value='emerson.emendes@gmail.com';document.body.appendChild(temp);temp.select();document.execCommand('copy');document.body.removeChild(temp);}return false;">copy</a>]</p> 
-My <a href="https://github.com/emersonmendes">GitHub</a><br/>
-My <a href="https://www.linkedin.com/in/emersonemendes">LinkedIn</a><br/>
+My <a href="https://github.com/emersonmendes">GitHub</a>
+My <a href="https://www.linkedin.com/in/emersonemendes">LinkedIn</a>
 My <a href="https://blog.emersonmendes.com.br">Blog</a>
 
 My favorite code quote:<br/><br/>"<span class="term-quote">Code is like humor. When you have to explain it, it’s bad</span>" - Cory House

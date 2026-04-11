@@ -223,6 +223,11 @@ body {
     word-break: break-word;
 }
 
+/* Tight vertical rhythm for <p> inside the terminal */
+#console p {
+    margin: 0.2em 0;
+}
+
 #console a {
     overflow-wrap: anywhere;
     word-break: break-word;
