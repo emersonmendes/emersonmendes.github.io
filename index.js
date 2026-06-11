@@ -183,9 +183,6 @@ var Typer = {
     speed: 2,
     file: "emerson.txt",
     init: function () {
-        Typer.accessCountimer = setInterval(function () {
-            Typer.updLstChr();
-        }, 500);
         $.get(Typer.file, function (data) {
             Typer.text = data;
             Typer.text = Typer.text.slice(0, Typer.text.length - 1);
@@ -238,6 +235,7 @@ var Terminal = {
     isActive: false,
     history: [],
     historyIndex: -1,
+    cursorTimer: null,
 
     getWdDisplay: function () {
         var p = Terminal.path;
@@ -317,7 +315,10 @@ var Terminal = {
         if (Typer.accessCountimer) {
             clearInterval(Typer.accessCountimer); // Stop the old cursor blinker
         }
-        setInterval(Terminal.blinkCursor, 500); // Start new cursor blinker
+        if (Terminal.cursorTimer) {
+            clearInterval(Terminal.cursorTimer);
+        }
+        Terminal.cursorTimer = setInterval(Terminal.blinkCursor, 500); // Start new cursor blinker
         CrtScroll.update();
         if (MobileTerm.useMobileCapture()) {
             setTimeout(function () {
@@ -640,9 +641,111 @@ var Snake = {
     }
 };
 
+/** Boot sequence: types emerson.txt then starts the terminal. Restartable by Power. */
+var Boot = {
+    timer: null,
+
+    start: function () {
+        Boot.stop();
+        Typer.index = 0;
+        Terminal.isActive = false;
+        Terminal.input = "";
+        Terminal.path = ["home", "emerson"];
+        $("#console").html("");
+        Typer.accessCountimer = setInterval(function () {
+            Typer.updLstChr();
+        }, 500);
+        Boot.timer = setInterval(function () {
+            Typer.addText();
+            if (Typer.text && Typer.index > Typer.text.length) {
+                clearInterval(Boot.timer);
+                Boot.timer = null;
+                Terminal.init(); // Start terminal after typing is done
+            }
+        }, 30);
+    },
+
+    stop: function () {
+        if (Boot.timer) {
+            clearInterval(Boot.timer);
+            Boot.timer = null;
+        }
+        if (Typer.accessCountimer) {
+            clearInterval(Typer.accessCountimer);
+            Typer.accessCountimer = null;
+        }
+        if (Terminal.cursorTimer) {
+            clearInterval(Terminal.cursorTimer);
+            Terminal.cursorTimer = null;
+        }
+    }
+};
+
+/** Monitor power button: CRT turn-off effect; turning back on replays the boot. */
+var Power = {
+    isOn: true,
+    busy: false,
+    OFF_MS: 550,
+    ON_MS: 650,
+
+    toggle: function () {
+        if (Power.busy) return;
+        if (Power.isOn) Power.turnOff();
+        else Power.turnOn();
+    },
+
+    turnOff: function () {
+        Power.busy = true;
+        Power.isOn = false;
+
+        if (Snake.isActive) {
+            clearInterval(Snake.interval);
+            Snake.isActive = false;
+            if (document.body) document.body.classList.remove("mobile-snake");
+            $(".crt-inner").removeClass("crt-snake-mode");
+        }
+        Terminal.isActive = false;
+        Boot.stop();
+        $(document).unbind("keydown").unbind("keypress");
+        MobileTerm.detach();
+        MobileTerm.syncBodyClass();
+
+        $("#power-btn").removeClass("is-on");
+        var $screen = $(".crt-screen");
+        $screen.removeClass("powering-on").addClass("powering-off");
+        setTimeout(function () {
+            $screen.removeClass("powering-off").addClass("is-off");
+            $("#console").html("");
+            Power.busy = false;
+        }, Power.OFF_MS);
+    },
+
+    turnOn: function () {
+        Power.busy = true;
+        Power.isOn = true;
+
+        $("#power-btn").addClass("is-on");
+        $("#console").html("");
+        var $screen = $(".crt-screen");
+        $screen.removeClass("is-off").addClass("powering-on");
+        setTimeout(function () {
+            $screen.removeClass("powering-on");
+            Power.busy = false;
+            Boot.start();
+        }, Power.ON_MS);
+    }
+};
+
 Typer.speed = 3;
 CrtScroll.init();
 Typer.init();
+Boot.start();
+
+$("#power-btn").bind("click", function (e) {
+    e.stopPropagation();
+    this.blur(); // keeping focus would make Enter in the terminal re-trigger the button
+    Power.toggle();
+});
 
 $(window).bind("resize", function () {
     MobileTerm.syncBodyClass();
@@ -650,13 +753,3 @@ $(window).bind("resize", function () {
         Terminal.attachEvents();
     }
 });
-
-var timer = setInterval("t();", 30);
-function t() {
-    Typer.addText({ "keyCode": 123748 });
-
-    if (Typer.text && Typer.index > Typer.text.length) {
-        clearInterval(timer);
-        Terminal.init(); // Start terminal after typing is done
-    }
-}

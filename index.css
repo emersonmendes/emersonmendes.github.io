@@ -254,6 +254,92 @@ body {
     font-size: 13px;
 }
 
+/* Power Button — sits on the bottom strip of the case frame; the case itself
+   has pointer-events: none, so the button must re-enable them */
+.power-btn {
+    position: absolute;
+    bottom: 4px;
+    right: 45px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid #111;
+    padding: 0;
+    background: radial-gradient(circle at 35% 30%, #555, #2a2a2a 60%, #111);
+    box-shadow:
+        inset 0 -2px 3px rgba(0,0,0,0.6),
+        inset 0 1px 1px rgba(255,255,255,0.15),
+        0 1px 2px rgba(0,0,0,0.5);
+    cursor: pointer;
+    pointer-events: auto;
+    z-index: 5;
+}
+
+.power-btn:active {
+    transform: translateY(1px);
+    box-shadow:
+        inset 0 2px 4px rgba(0,0,0,0.7),
+        0 1px 1px rgba(0,0,0,0.4);
+}
+
+/* Power LED in the middle of the button */
+.power-btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 6px;
+    height: 6px;
+    margin: -3px 0 0 -3px;
+    border-radius: 50%;
+    background: #3a0a0a;
+    box-shadow: 0 0 2px rgba(255, 0, 0, 0.3);
+}
+
+.power-btn.is-on::after {
+    background: var(--term-green);
+    box-shadow: 0 0 6px var(--term-green);
+}
+
+/* CRT power off/on — transform only lives during the animation (steady state
+   stays untransformed so pointer hit-testing keeps working) */
+.crt-screen.powering-off .crt-inner,
+.crt-screen.powering-off .scanlines {
+    animation: crt-off 0.55s ease-in forwards;
+    pointer-events: none;
+}
+
+.crt-screen.powering-on .crt-inner,
+.crt-screen.powering-on .scanlines {
+    animation: crt-on 0.65s ease-out;
+    pointer-events: none;
+}
+
+.crt-screen.is-off .crt-inner,
+.crt-screen.is-off .scanlines {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.crt-screen.is-off::after {
+    animation: none;
+    opacity: 0;
+}
+
+@keyframes crt-off {
+    0%   { transform: scale(1, 1);       filter: brightness(1);  opacity: 1; }
+    55%  { transform: scale(1, 0.01);    filter: brightness(6);  opacity: 1; }
+    75%  { transform: scale(0.4, 0.005); filter: brightness(10); opacity: 1; }
+    100% { transform: scale(0, 0);       filter: brightness(20); opacity: 0; }
+}
+
+@keyframes crt-on {
+    0%   { transform: scale(0, 0);       filter: brightness(20); opacity: 0; }
+    35%  { transform: scale(0.6, 0.004); filter: brightness(8);  opacity: 1; }
+    60%  { transform: scale(1, 0.02);    filter: brightness(4);  opacity: 1; }
+    100% { transform: scale(1, 1);       filter: brightness(1);  opacity: 1; }
+}
+
 /* Monitor Neck/Stand */
 .monitor-neck {
     width: 180px;
@@ -534,6 +620,13 @@ a:hover {
     .monitor-neck,
     .monitor-base {
         display: none;
+    }
+
+    .power-btn {
+        bottom: 2px;
+        right: 18px;
+        width: 18px;
+        height: 18px;
     }
 
     #crt-content {
