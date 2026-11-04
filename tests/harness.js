@@ -123,6 +123,13 @@ async function setViewport(width) {
     w.$(w).trigger("resize");
 }
 
+/** Clicks a language button (en/pt/es) and waits for the terminal to reboot in it. */
+async function switchLang(code) {
+    w.document.querySelector("#lang-switch [data-lang='" + code + "']").click();
+    eq(w.I18n.lang, code);
+    await waitFor(() => w.Terminal.isActive, 20000, "reboot in " + code);
+}
+
 /** Fresh terminal: prompt in /home/emerson, empty screen, input and history. */
 function reset() {
     const T = w.Terminal;
@@ -166,6 +173,9 @@ async function runTests() {
                 report.push("<span class='fail'>✗ " + escapeHtml(t.name) + "\n    " + escapeHtml(err && err.message || String(err)) + "</span>");
             }
         }
+        try {
+            w.localStorage.removeItem(w.I18n.STORAGE_KEY); // don't leave the tests' language choice behind
+        } catch (e) {}
         report.push("", passed + " passed, " + failed + " failed");
         summary.dataset.status = failed || !passed ? "fail" : "pass";
         if (!passed && !failed) report.push("no tests matched " + JSON.stringify(grep));

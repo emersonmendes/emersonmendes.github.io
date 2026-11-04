@@ -19,7 +19,8 @@
     <h1>Terminal tests</h1>
     <p>Filter with <code>?grep=text</code>.</p>
     <pre id="summary" data-status="running">running…</pre>
-    <iframe id="site" src="../index.html"></iframe>
+    <!-- ?lang=en: the suite expects English regardless of the browser language -->
+    <iframe id="site" src="../index.html?lang=en"></iframe>
     <script src="harness.js"></script>
     <script src="tests.js"></script>
     <script>runTests();</script>

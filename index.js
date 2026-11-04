@@ -1,4 +1,188 @@
-/** Syncs the on-screen scrollbar thumb with #crt-content and supports drag-to-scroll */
+/** UI language (en / pt / es). Commands, paths and technical words (root, home, snake...) are never translated. */
+var I18n = {
+    SUPPORTED: ["en", "pt", "es"],
+    DEFAULT: "en",
+    STORAGE_KEY: "lang",
+    /** Value for <html lang>. */
+    HTML_LANG: { en: "en", pt: "pt-BR", es: "es" },
+    lang: "en",
+
+    strings: {
+        en: {
+            "help.title": "Available commands:",
+            "help.cd": "Change directory (try {example})",
+            "help.pwd": "Print the current directory",
+            "help.ls": "List directory contents",
+            "help.cat": "Print a file (e.g. {example})",
+            "help.rm": "Remove a file",
+            "help.snake": "Start the classic snake game",
+            "help.clear": "Clear the terminal screen",
+            "help.help": "Show this help",
+            "err.noSuchFile": "No such file or directory",
+            "err.isDir": "Is a directory",
+            "ls.tooMany": "ls: too many arguments",
+            "cat.missing": "cat: missing file operand",
+            "cat.notReady": "cat: emerson.txt: file not ready",
+            "rm.missing": "rm: missing operand",
+            "rm.cannot": "rm: cannot remove '{file}': {reason}",
+            "rm.protected": "Nice try, but this file is unremovable.",
+            "cmd.notFound": "Command not found: {cmd}",
+            "cmd.hint": "Type 'help' for available commands.",
+            "snake.score": "Score: {score}",
+            "snake.controls": "Controls: Arrow Keys | ESC to exit",
+            "snake.gameOver": "Game Over! Score: {score}",
+            "ui.power": "Power monitor on/off",
+            "ui.terminalInput": "Terminal input",
+            "ui.language": "Language"
+        },
+        pt: {
+            "help.title": "Comandos disponíveis:",
+            "help.cd": "Muda de diretório (tente {example})",
+            "help.pwd": "Mostra o diretório atual",
+            "help.ls": "Lista o conteúdo do diretório",
+            "help.cat": "Mostra um arquivo (ex.: {example})",
+            "help.rm": "Remove um arquivo",
+            "help.snake": "Inicia o clássico jogo snake",
+            "help.clear": "Limpa a tela do terminal",
+            "help.help": "Mostra esta ajuda",
+            "err.noSuchFile": "Arquivo ou diretório inexistente",
+            "err.isDir": "É um diretório",
+            "ls.tooMany": "ls: argumentos demais",
+            "cat.missing": "cat: falta o nome do arquivo",
+            "cat.notReady": "cat: emerson.txt: arquivo ainda não carregado",
+            "rm.missing": "rm: falta o operando",
+            "rm.cannot": "rm: não foi possível remover '{file}': {reason}",
+            "rm.protected": "Boa tentativa, mas este arquivo não pode ser removido.",
+            "cmd.notFound": "Comando não encontrado: {cmd}",
+            "cmd.hint": "Digite 'help' para ver os comandos disponíveis.",
+            "snake.score": "Pontos: {score}",
+            "snake.controls": "Controles: setas | ESC para sair",
+            "snake.gameOver": "Fim de jogo! Pontos: {score}",
+            "ui.power": "Ligar/desligar o monitor",
+            "ui.terminalInput": "Entrada do terminal",
+            "ui.language": "Idioma"
+        },
+        es: {
+            "help.title": "Comandos disponibles:",
+            "help.cd": "Cambia de directorio (prueba {example})",
+            "help.pwd": "Muestra el directorio actual",
+            "help.ls": "Lista el contenido del directorio",
+            "help.cat": "Muestra un archivo (p. ej. {example})",
+            "help.rm": "Elimina un archivo",
+            "help.snake": "Inicia el clásico juego snake",
+            "help.clear": "Limpia la pantalla del terminal",
+            "help.help": "Muestra esta ayuda",
+            "err.noSuchFile": "No existe el archivo o el directorio",
+            "err.isDir": "Es un directorio",
+            "ls.tooMany": "ls: demasiados argumentos",
+            "cat.missing": "cat: falta el nombre del archivo",
+            "cat.notReady": "cat: emerson.txt: el archivo aún no está cargado",
+            "rm.missing": "rm: falta un operando",
+            "rm.cannot": "rm: no se puede borrar '{file}': {reason}",
+            "rm.protected": "Buen intento, pero este archivo no se puede eliminar.",
+            "cmd.notFound": "Comando no encontrado: {cmd}",
+            "cmd.hint": "Escribe 'help' para ver los comandos disponibles.",
+            "snake.score": "Puntos: {score}",
+            "snake.controls": "Controles: flechas | ESC para salir",
+            "snake.gameOver": "¡Fin del juego! Puntos: {score}",
+            "ui.power": "Encender/apagar el monitor",
+            "ui.terminalInput": "Entrada del terminal",
+            "ui.language": "Idioma"
+        }
+    },
+
+    isSupported: function (code) {
+        return I18n.SUPPORTED.indexOf(code) !== -1;
+    },
+
+    /** First supported language among browser language tags (e.g. "pt-BR"); English if none. */
+    detect: function (langs) {
+        langs = langs || [];
+        for (var i = 0; i < langs.length; i++) {
+            var code = String(langs[i] || "").toLowerCase().split(/[-_]/)[0];
+            if (I18n.isSupported(code)) return code;
+        }
+        return I18n.DEFAULT;
+    },
+
+    /** Starting language: ?lang= in the URL, then the saved choice, then the browser. */
+    pick: function (search, stored, browserLangs) {
+        var m = /[?&]lang=([^&#]*)/.exec(search || "");
+        var fromUrl = m ? decodeURIComponent(m[1]).toLowerCase() : "";
+        if (I18n.isSupported(fromUrl)) return fromUrl;
+        if (I18n.isSupported(stored)) return stored;
+        return I18n.detect(browserLangs);
+    },
+
+    browserLangs: function () {
+        var n = window.navigator || {};
+        if (n.languages && n.languages.length) return n.languages;
+        return [n.language || n.userLanguage || ""];
+    },
+
+    readStored: function () {
+        try {
+            return window.localStorage.getItem(I18n.STORAGE_KEY);
+        } catch (e) {
+            return null;
+        }
+    },
+
+    save: function (code) {
+        try {
+            window.localStorage.setItem(I18n.STORAGE_KEY, code);
+        } catch (e) {}
+    },
+
+    /** Translated string; {name} placeholders are filled from vars. Falls back to English. */
+    t: function (key, vars) {
+        var s = I18n.strings[I18n.lang][key];
+        if (s == null) s = I18n.strings[I18n.DEFAULT][key];
+        if (s == null) return key;
+        if (vars) {
+            s = s.replace(/\{(\w+)\}/g, function (m, name) {
+                return vars.hasOwnProperty(name) ? vars[name] : m;
+            });
+        }
+        return s;
+    },
+
+    /** Updates the page chrome (html lang, aria labels, selector state) to the current language. */
+    apply: function () {
+        document.documentElement.setAttribute("lang", I18n.HTML_LANG[I18n.lang]);
+        $("#power-btn").attr("aria-label", I18n.t("ui.power")).attr("title", I18n.t("ui.power"));
+        $("#terminal-mobile-input").attr("aria-label", I18n.t("ui.terminalInput"));
+        $("#lang-switch").attr("aria-label", I18n.t("ui.language"));
+        $("#lang-switch .lang-btn").each(function () {
+            var active = $(this).attr("data-lang") === I18n.lang;
+            $(this).toggleClass("is-active", active).attr("aria-pressed", active ? "true" : "false");
+        });
+    },
+
+    init: function () {
+        I18n.lang = I18n.pick(window.location.search, I18n.readStored(), I18n.browserLangs());
+        I18n.apply();
+    },
+
+    /** User picked a language: remember it and restart the screen in that language. */
+    change: function (code) {
+        if (!I18n.isSupported(code)) return;
+        I18n.save(code);
+        if (code === I18n.lang) return;
+        I18n.lang = code;
+        I18n.apply();
+        Typer.load();
+        // While off (or mid-animation) just switch; the next boot uses the new language
+        if (!Power.isOn || Power.busy) return;
+        Snake.stop();
+        Terminal.isActive = false;
+        $(document).unbind("keydown").unbind("keypress");
+        MobileTerm.detach();
+        MobileTerm.syncBodyClass();
+        Boot.start();
+    }
+};
+
 /** Captura de teclado virtual em viewports estreitos: input nativo + espelho em Terminal.input */
 var MobileTerm = {
     crtTapBound: false,
@@ -76,6 +260,7 @@ var MobileTerm = {
     }
 };
 
+/** Syncs the on-screen scrollbar thumb with #crt-content and supports drag-to-scroll */
 var CrtScroll = {
     dragging: false,
     dragStartY: 0,
@@ -193,11 +378,21 @@ var Typer = {
     accessCountimer: null,
     index: 0,
     speed: 2,
-    file: "emerson.txt",
-    init: function () {
-        $.get(Typer.file, function (data) {
-            Typer.text = data;
-            Typer.text = Typer.text.slice(0, Typer.text.length - 1);
+    /** emerson.txt per language (the terminal always calls it emerson.txt). */
+    files: { en: "emerson.txt", pt: "emerson.pt.txt", es: "emerson.es.txt" },
+    cache: {},
+
+    /** Loads emerson.txt for the current language into Typer.text (null until it arrives). */
+    load: function () {
+        var lang = I18n.lang;
+        if (Typer.cache.hasOwnProperty(lang)) {
+            Typer.text = Typer.cache[lang];
+            return;
+        }
+        Typer.text = null;
+        $.get(Typer.files[lang], function (data) {
+            Typer.cache[lang] = data.replace(/\r?\n$/, ""); // drop a trailing newline
+            if (I18n.lang === lang) Typer.text = Typer.cache[lang];
         });
     },
 
@@ -444,7 +639,7 @@ var Terminal = {
 
     catEmersonContent: function () {
         if (!Typer.text) {
-            $("#console").append("cat: emerson.txt: file not ready<br/>");
+            $("#console").append(I18n.t("cat.notReady") + "<br/>");
             return;
         }
         var body = Typer.text.replace(/\n/g, "<br/>");
@@ -591,17 +786,24 @@ var Terminal = {
 
         if (cmd === "") {
         } else if (name === "help") {
-            $("#console").append("<br/>");
-            $("#console").append("<span style='color: #0bc;'>Available commands:</span><br/><br/>");
-            $("#console").append("<span style='color: #0f0;'>cd</span> - Change directory (try <span style='color:#0f0'>cd ..</span>)<br/>");
-            $("#console").append("<span style='color: #0f0;'>pwd</span> - Print the current directory<br/>");
-            $("#console").append("<span style='color: #0f0;'>ls</span> - List directory contents<br/>");
-            $("#console").append("<span style='color: #0f0;'>cat</span> - Print a file (e.g. <span style='color:#0f0'>cat emerson.txt</span>)<br/>");
-            $("#console").append("<span style='color: #0f0;'>rm</span> - Remove a file<br/>");
-            $("#console").append("<span style='color: #0f0;'>snake</span> - Start the classic snake game<br/>");
-            $("#console").append("<span style='color: #0f0;'>clear</span> - Clear the terminal screen<br/>");
-            $("#console").append("<span style='color: #0f0;'>help</span> - Show this help<br/>");
-            $("#console").append("<br/>");
+            var green = function (s) {
+                return "<span style='color: #0f0;'>" + s + "</span>";
+            };
+            var helpLine = function (c, example) {
+                return green(c) + " - " + I18n.t("help." + c, { example: example && green(example) }) + "<br/>";
+            };
+            $("#console").append(
+                "<br/><span style='color: #0bc;'>" + I18n.t("help.title") + "</span><br/><br/>" +
+                helpLine("cd", "cd ..") +
+                helpLine("pwd") +
+                helpLine("ls") +
+                helpLine("cat", "cat emerson.txt") +
+                helpLine("rm") +
+                helpLine("snake") +
+                helpLine("clear") +
+                helpLine("help") +
+                "<br/>"
+            );
         } else if (name === "cd") {
             var arg = (tokens.slice(1).join(" ") || "").replace(/^["']|["']$/g, "");
             if (!arg || arg === "~") {
@@ -614,14 +816,14 @@ var Terminal = {
                 if (Terminal.isValidPath(target)) {
                     Terminal.path = target;
                 } else {
-                    $("#console").append("cd: " + arg + ": No such file or directory<br/>");
+                    $("#console").append("cd: " + arg + ": " + I18n.t("err.noSuchFile") + "<br/>");
                 }
             }
         } else if (name === "pwd") {
             $("#console").append("/" + Terminal.path.join("/") + "<br/>");
         } else if (name === "ls") {
             if (tokens.length > 1) {
-                $("#console").append("ls: too many arguments<br/>");
+                $("#console").append(I18n.t("ls.tooMany") + "<br/>");
             } else {
                 var names = Terminal.listDir();
                 $("#console").append(names.join("  ") + "<br/>");
@@ -629,27 +831,27 @@ var Terminal = {
         } else if (name === "cat") {
             var file = tokens.slice(1).join(" ").replace(/^["']|["']$/g, "");
             if (!file) {
-                $("#console").append("cat: missing file operand<br/>");
+                $("#console").append(I18n.t("cat.missing") + "<br/>");
             } else {
                 var fileSegs = Terminal.resolvePath(file);
                 if (Terminal.isEmersonFile(fileSegs)) {
                     Terminal.catEmersonContent();
                 } else if (Terminal.isValidPath(fileSegs)) {
-                    $("#console").append("cat: " + file + ": Is a directory<br/>");
+                    $("#console").append("cat: " + file + ": " + I18n.t("err.isDir") + "<br/>");
                 } else {
-                    $("#console").append("cat: " + file + ": No such file or directory<br/>");
+                    $("#console").append("cat: " + file + ": " + I18n.t("err.noSuchFile") + "<br/>");
                 }
             }
         } else if (name === "rm") {
             var targetFile = tokens.slice(1).join(" ").replace(/^["']|["']$/g, "");
             if (!targetFile) {
-                $("#console").append("rm: missing operand<br/>");
+                $("#console").append(I18n.t("rm.missing") + "<br/>");
             } else if (Terminal.isProtectedEmersonRm(targetFile)) {
-                $("#console").append('Nice try, but this file is unremovable.<br/>');
+                $("#console").append(I18n.t("rm.protected") + "<br/>");
             } else if (Terminal.isValidPath(Terminal.resolvePath(targetFile))) {
-                $("#console").append("rm: cannot remove '" + targetFile + "': Is a directory<br/>");
+                $("#console").append(I18n.t("rm.cannot", { file: targetFile, reason: I18n.t("err.isDir") }) + "<br/>");
             } else {
-                $("#console").append("rm: cannot remove '" + targetFile + "': No such file or directory<br/>");
+                $("#console").append(I18n.t("rm.cannot", { file: targetFile, reason: I18n.t("err.noSuchFile") }) + "<br/>");
             }
         } else if (name === "snake") {
             Snake.start();
@@ -659,8 +861,8 @@ var Terminal = {
         } else if (name === "clear") {
             $("#console").html("");
         } else {
-            $("#console").append("Command not found: " + cmd + "<br/>");
-            $("#console").append("Type 'help' for available commands.<br/>");
+            $("#console").append(I18n.t("cmd.notFound", { cmd: cmd }) + "<br/>");
+            $("#console").append(I18n.t("cmd.hint") + "<br/>");
         }
 
         Terminal.input = "";
@@ -693,7 +895,10 @@ var Snake = {
             $crt[0].scrollTop = 0;
         }
         $("#console").html(""); // Clear console for game
-        $("#console").append("<div id='snake-game'></div><div id='snake-score'>Score: 0</div><div id='snake-controls'>Controls: Arrow Keys | ESC to exit</div>");
+        $("#console").append(
+            "<div id='snake-game'></div><div id='snake-score'>" + I18n.t("snake.score", { score: 0 }) + "</div>" +
+            "<div id='snake-controls'>" + I18n.t("snake.controls") + "</div>"
+        );
         
         Snake.initGrid();
         Snake.snake = [{x: 5, y: 5}, {x: 4, y: 5}, {x: 3, y: 5}];
@@ -710,12 +915,18 @@ var Snake = {
         });
     },
 
-    end: function () {
+    /** Stops the game without returning to the terminal (no-op if not running). */
+    stop: function () {
+        if (!Snake.isActive) return;
         clearInterval(Snake.interval);
         Snake.isActive = false;
         if (document.body) document.body.classList.remove("mobile-snake");
         $(".crt-inner").removeClass("crt-snake-mode");
-        $("#console").html("Game Over! Score: " + Snake.score + "<br/><br/>");
+    },
+
+    end: function () {
+        Snake.stop();
+        $("#console").html(I18n.t("snake.gameOver", { score: Snake.score }) + "<br/><br/>");
         Terminal.init(); // Return to terminal
     },
 
@@ -761,7 +972,7 @@ var Snake = {
 
         if (head.x === Snake.food.x && head.y === Snake.food.y) {
             Snake.score++;
-            $("#snake-score").text("Score: " + Snake.score);
+            $("#snake-score").text(I18n.t("snake.score", { score: Snake.score }));
             Snake.placeFood();
         } else {
             Snake.snake.pop();
@@ -886,12 +1097,7 @@ var Power = {
         Power.busy = true;
         Power.isOn = false;
 
-        if (Snake.isActive) {
-            clearInterval(Snake.interval);
-            Snake.isActive = false;
-            if (document.body) document.body.classList.remove("mobile-snake");
-            $(".crt-inner").removeClass("crt-snake-mode");
-        }
+        Snake.stop();
         Terminal.isActive = false;
         Boot.stop();
         $(document).unbind("keydown").unbind("keypress");
@@ -925,14 +1131,21 @@ var Power = {
 };
 
 Typer.speed = 3;
+I18n.init();
 CrtScroll.init();
-Typer.init();
+Typer.load();
 Boot.start();
 
 $("#power-btn").bind("click", function (e) {
     e.stopPropagation();
     this.blur(); // keeping focus would make Enter in the terminal re-trigger the button
     Power.toggle();
+});
+
+$("#lang-switch .lang-btn").bind("click", function (e) {
+    e.stopPropagation();
+    this.blur(); // same as the power button: keep Enter going to the terminal
+    I18n.change($(this).attr("data-lang"));
 });
 
 $(window).bind("resize", function () {

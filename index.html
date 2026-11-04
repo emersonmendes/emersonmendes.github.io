@@ -1,4 +1,4 @@
-<html>
+<html lang="en">
 
     <head>
         <meta charset="utf-8">
@@ -36,6 +36,11 @@
                         </svg>
                     </button>
                     <span class="power-led" aria-hidden="true"></span>
+                    <div class="lang-switch" id="lang-switch" role="group" aria-label="Language">
+                        <button type="button" class="lang-btn" data-lang="en" lang="en" title="English" aria-pressed="false">EN</button>
+                        <button type="button" class="lang-btn" data-lang="pt" lang="pt-BR" title="Português" aria-pressed="false">PT</button>
+                        <button type="button" class="lang-btn" data-lang="es" lang="es" title="Español" aria-pressed="false">ES</button>
+                    </div>
                 </div>
                 <div class="monitor-neck"></div>
                 <div class="monitor-base"></div>
@@ -44,7 +49,7 @@
         <!-- Mobile: foco aqui abre o teclado virtual; valor é espelhado no terminal (só CSS/JS mobile) -->
         <input type="text" id="terminal-mobile-input" class="terminal-mobile-input"
             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-            enterkeyhint="go" inputmode="text" aria-label="Entrada do terminal">
+            enterkeyhint="go" inputmode="text" aria-label="Terminal input">
         <script type="text/javascript" src="index.js"></script>
     </body>
 

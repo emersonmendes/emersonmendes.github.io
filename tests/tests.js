@@ -397,3 +397,131 @@ test("mobile: the native input is mirrored into the terminal and runs commands",
         await setViewport(1000);
     }
 });
+
+// --------------------------------------------------------------- language
+
+test("language detection: pt, es and en from the browser, English otherwise", () => {
+    const d = w.I18n.detect;
+    eq(d(["pt-BR"]), "pt");
+    eq(d(["pt-PT", "en"]), "pt");
+    eq(d(["es-MX"]), "es");
+    eq(d(["ES"]), "es");
+    eq(d(["en-US"]), "en");
+    eq(d(["fr-FR"]), "en");
+    eq(d(["de", "es-AR", "pt"]), "es", "first supported language in the list wins");
+    eq(d(["zh_CN"]), "en");
+    eq(d([]), "en");
+    eq(d([""]), "en");
+    eq(d(undefined), "en");
+});
+
+test("language precedence: ?lang= beats the saved choice, which beats the browser", () => {
+    const p = w.I18n.pick;
+    eq(p("?lang=es", "pt", ["en-US"]), "es");
+    eq(p("?x=1&lang=PT", null, ["en"]), "pt");
+    eq(p("", "pt", ["es-ES"]), "pt");
+    eq(p("?lang=fr", "es", ["pt-BR"]), "es", "unsupported ?lang= is ignored");
+    eq(p("", "xx", ["pt-BR"]), "pt", "unsupported saved value is ignored");
+    eq(p("", null, ["it-IT"]), "en");
+});
+
+test("language selector shows EN/PT/ES with the current one pressed", () => {
+    const btns = [...w.document.querySelectorAll("#lang-switch .lang-btn")];
+    eq(btns.map((b) => b.textContent), ["EN", "PT", "ES"]);
+    eq(btns.map((b) => b.getAttribute("aria-pressed")), ["true", "false", "false"]);
+    ok(btns[0].classList.contains("is-active"));
+    eq(w.document.documentElement.lang, "en");
+    eq(w.getComputedStyle(btns[0]).color, "rgb(0, 255, 0)", "active key is lit");
+    // clickable even though .monitor-case has pointer-events: none
+    const r = btns[1].getBoundingClientRect();
+    ok(w.document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) === btns[1], "PT key is hit-testable");
+});
+
+test("Portuguese: reboots translated; commands, paths and technical words stay", async () => {
+    try {
+        await switchLang("pt");
+        const btn = w.document.querySelector("#lang-switch [data-lang='pt']");
+        ok(w.document.activeElement !== btn, "button gives focus back (Enter goes to the terminal)");
+        eq(btn.getAttribute("aria-pressed"), "true");
+        eq(w.document.documentElement.lang, "pt-BR");
+        eq(w.localStorage.getItem("lang"), "pt", "choice is saved");
+        eq(w.document.getElementById("power-btn").getAttribute("aria-label"), "Ligar/desligar o monitor");
+
+        const boot = consoleLines().join("\n");
+        contains(boot, "Meu nome é Emerson Mendes");
+        contains(boot, "Abraços!");
+        contains(boot, "root@emersonmendes:~$ cat emerson.txt");
+        ok(!boot.includes("I am Emerson Mendes"), "English text is gone");
+
+        const help = run("help").join("\n");
+        contains(help, "Comandos disponíveis:");
+        for (const c of ["cd", "pwd", "ls", "cat", "rm", "snake", "clear", "help"]) contains(help, c + " - ");
+        contains(help, "cd - Muda de diretório (tente cd ..)");
+        contains(help, "snake - Inicia o clássico jogo snake");
+
+        eq(run("ls"), ["emerson.txt"]);
+        contains(run("cat emerson.txt").join("\n"), "Meu nome é Emerson Mendes");
+        eq(run("cd nope"), ["cd: nope: Arquivo ou diretório inexistente"]);
+        eq(run("cat /home"), ["cat: /home: É um diretório"]);
+        eq(run("rm emerson.txt"), ["Boa tentativa, mas este arquivo não pode ser removido."]);
+        eq(run("rm .."), ["rm: não foi possível remover '..': É um diretório"]);
+        eq(run("foo"), ["Comando não encontrado: foo", "Digite 'help' para ver os comandos disponíveis."]);
+        eq(run("pwd"), ["/home/emerson"]);
+    } finally {
+        await switchLang("en");
+    }
+    contains(consoleLines().join("\n"), "I am Emerson Mendes");
+    eq(run("cd nope"), ["cd: nope: No such file or directory"]);
+    eq(w.localStorage.getItem("lang"), "en");
+});
+
+test("Spanish: snake texts are translated", async () => {
+    try {
+        await switchLang("es");
+        contains(consoleLines().join("\n"), "Soy Emerson Mendes");
+        eq(run("cat"), ["cat: falta el nombre del archivo"]);
+        type("snake");
+        key(KEY.ENTER);
+        eq(w.document.getElementById("snake-score").textContent, "Puntos: 0");
+        eq(w.document.getElementById("snake-controls").textContent, "Controles: flechas | ESC para salir");
+        key(KEY.ESC);
+        contains(consoleLines().join("\n"), "¡Fin del juego! Puntos: 0");
+    } finally {
+        await switchLang("en");
+    }
+});
+
+test("switching language during snake stops the game and reboots", async () => {
+    type("snake");
+    key(KEY.ENTER);
+    ok(w.Snake.isActive);
+    try {
+        await switchLang("pt");
+        ok(!w.Snake.isActive, "snake stopped");
+        ok(!w.document.querySelector(".crt-inner").classList.contains("crt-snake-mode"));
+        ok(!w.document.getElementById("snake-game"), "game board is gone");
+        contains(consoleLines().join("\n"), "Meu nome é Emerson Mendes");
+        eq(run("pwd"), ["/home/emerson"]);
+    } finally {
+        await switchLang("en");
+    }
+});
+
+test("switching language while the monitor is off keeps it off; next boot uses it", async () => {
+    const power = w.document.getElementById("power-btn");
+    power.click();
+    await waitFor(() => !w.Power.busy, 3000, "power off");
+    try {
+        w.document.querySelector("#lang-switch [data-lang='es']").click();
+        eq(w.I18n.lang, "es");
+        await sleep(200);
+        ok(!w.Power.isOn && !w.Terminal.isActive, "still off");
+        eq(consoleLines().join(""), "");
+
+        power.click();
+        await waitFor(() => w.Terminal.isActive, 20000, "reboot");
+        contains(consoleLines().join("\n"), "Soy Emerson Mendes");
+    } finally {
+        await switchLang("en");
+    }
+});
