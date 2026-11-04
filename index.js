@@ -625,8 +625,8 @@ var Snake = {
                     }
                 }
                 
-                if (isSnake) output += "[]";
-                else if (Snake.food && Snake.food.x === x && Snake.food.y === y) output += "()";
+                if (isSnake) output += "<span class='snake-body'>[]</span>";
+                else if (Snake.food && Snake.food.x === x && Snake.food.y === y) output += "<span class='snake-food'>()</span>";
                 else output += "&nbsp;&nbsp;"; // 2 spaces for aspect ratio
             }
             output += "|<br/>";

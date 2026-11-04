@@ -2,6 +2,7 @@
     --term-green: #0f0;
     --term-blue: #0bc;
     --term-pink: #ff0096;
+    --term-yellow: #ff0;
     --monitor-bg: #222;
     --monitor-bezel: #111;
     --screen-bg: #050505;
@@ -248,6 +249,9 @@ body {
     max-width: 100%;
     overflow: hidden;
 }
+
+.snake-body { color: var(--term-green); text-shadow: 0 0 4px var(--term-green); }
+.snake-food { color: var(--term-yellow); text-shadow: 0 0 4px var(--term-yellow); }
 
 #snake-score, #snake-controls {
     margin-top: 8px;
