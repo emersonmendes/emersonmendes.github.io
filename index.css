@@ -250,6 +250,19 @@ body {
     overflow: hidden;
 }
 
+/* Terminal input line: keep typed spaces, and a zero-width caret so it can sit
+   between characters (when editing mid-line) without pushing the text */
+#cmd-input, #cmd-after {
+    white-space: pre-wrap;
+}
+
+#cursor {
+    display: inline-block;
+    width: 0;
+    position: relative;
+    left: -0.5ch;
+}
+
 .snake-body { color: var(--term-green); text-shadow: 0 0 4px var(--term-green); }
 .snake-food { color: var(--term-yellow); text-shadow: 0 0 4px var(--term-yellow); }
 

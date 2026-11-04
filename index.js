@@ -42,10 +42,13 @@ var MobileTerm = {
 
     attachInputHandlers: function () {
         var $inp = $("#terminal-mobile-input");
-        $inp.unbind("input.mobileterm keydown.mobileterm");
-        $inp.bind("input.mobileterm", function () {
+        $inp.unbind("input.mobileterm keydown.mobileterm keyup.mobileterm click.mobileterm");
+        // The native input does the editing; mirror its value and caret into the terminal
+        $inp.bind("input.mobileterm keyup.mobileterm click.mobileterm", function () {
             if (!Terminal.isActive) return;
-            Terminal.input = $inp.val() || "";
+            var el = $inp[0];
+            Terminal.input = el.value || "";
+            Terminal.cursorPos = typeof el.selectionStart === "number" ? el.selectionStart : Terminal.input.length;
             Terminal.updateInputDisplay();
         });
         $inp.bind("keydown.mobileterm", function (e) {
@@ -247,6 +250,8 @@ var Terminal = {
     historyIndex: -1,
     /** What was typed before starting to browse history, restored by ArrowDown. */
     historyDraft: "",
+    /** Cursor position inside `input` (0..input.length). */
+    cursorPos: 0,
     cursorTimer: null,
 
     historyUp: function () {
@@ -337,11 +342,55 @@ var Terminal = {
         return segments.length === 3 && segments[0] === "home" && segments[1] === "emerson" && segments[2] === "emerson.txt";
     },
 
+    /** Replaces the whole line and puts the cursor at its end. */
     setInput: function (value) {
         Terminal.input = value;
+        Terminal.cursorPos = value.length;
         var inp = MobileTerm.el();
-        if (inp && MobileTerm.useMobileCapture()) inp.value = value;
+        if (inp && MobileTerm.useMobileCapture()) {
+            inp.value = value;
+            try {
+                inp.setSelectionRange(value.length, value.length);
+            } catch (e) {}
+        }
         Terminal.updateInputDisplay();
+    },
+
+    insertText: function (str) {
+        var p = Terminal.cursorPos;
+        Terminal.input = Terminal.input.slice(0, p) + str + Terminal.input.slice(p);
+        Terminal.cursorPos = p + str.length;
+        Terminal.updateInputDisplay();
+    },
+
+    /** Backspace (dir = -1) or Delete (dir = 1) relative to the cursor. */
+    deleteChar: function (dir) {
+        var p = Terminal.cursorPos;
+        if (dir < 0) {
+            if (p === 0) return;
+            Terminal.input = Terminal.input.slice(0, p - 1) + Terminal.input.slice(p);
+            Terminal.cursorPos = p - 1;
+        } else {
+            if (p >= Terminal.input.length) return;
+            Terminal.input = Terminal.input.slice(0, p) + Terminal.input.slice(p + 1);
+        }
+        Terminal.updateInputDisplay();
+    },
+
+    moveCursorTo: function (pos) {
+        Terminal.cursorPos = Math.max(0, Math.min(pos, Terminal.input.length));
+        Terminal.updateInputDisplay();
+    },
+
+    /** Markup of an empty, editable input line (text before cursor, cursor, text after). */
+    inputLineHtml: function () {
+        return "<span id='cmd-input'></span><span id='cursor'>|</span><span id='cmd-after'></span>";
+    },
+
+    removeInputLine: function () {
+        $("#cmd-input").remove();
+        $("#cursor").remove();
+        $("#cmd-after").remove();
     },
 
     /** Tab completion of the last argument of cd/cat/rm against the virtual FS. */
@@ -385,11 +434,10 @@ var Terminal = {
         }
 
         // Ambiguous: list the candidates and redraw the prompt with the same input
-        $("#cmd-input").remove();
-        $("#cursor").remove();
+        Terminal.removeInputLine();
         $("#console").append(
             $("<span/>").text(input).html() + "<br/>" + names.join("  ") + "<br/>" +
-            Terminal.getPromptHtml() + "<span id='cmd-input'></span><span id='cursor'>|</span>"
+            Terminal.getPromptHtml() + Terminal.inputLineHtml()
         );
         Terminal.updateInputDisplay();
     },
@@ -410,7 +458,9 @@ var Terminal = {
     init: function () {
         Terminal.isActive = true;
         console.log("Terminal initialized, isActive:", Terminal.isActive);
-        $("#console").append("<br/>" + Terminal.getPromptHtml() + "<span id='cmd-input'></span><span id='cursor'>|</span>");
+        Terminal.input = "";
+        Terminal.cursorPos = 0;
+        $("#console").append("<br/>" + Terminal.getPromptHtml() + Terminal.inputLineHtml());
         MobileTerm.clear();
         MobileTerm.syncBodyClass();
         MobileTerm.bindCrtTapToFocus();
@@ -448,13 +498,32 @@ var Terminal = {
 
             var key = e.which || e.keyCode;
 
-            if (key == 13) {
+            // (jQuery 1.4 copies ctrlKey into metaKey, so don't test metaKey here)
+            if (e.ctrlKey && !e.altKey && (key == 65 || key == 69)) {
+                // Ctrl+A / Ctrl+E: start / end of line, like bash
+                e.preventDefault();
+                Terminal.moveCursorTo(key == 65 ? 0 : Terminal.input.length);
+            } else if (key == 13) {
                 e.preventDefault();
                 Terminal.processCommand();
             } else if (key == 8) {
                 e.preventDefault();
-                Terminal.input = Terminal.input.slice(0, -1);
-                Terminal.updateInputDisplay();
+                Terminal.deleteChar(-1);
+            } else if (key == 46) {
+                e.preventDefault();
+                Terminal.deleteChar(1);
+            } else if (key == 37) {
+                e.preventDefault();
+                Terminal.moveCursorTo(Terminal.cursorPos - 1);
+            } else if (key == 39) {
+                e.preventDefault();
+                Terminal.moveCursorTo(Terminal.cursorPos + 1);
+            } else if (key == 36) {
+                e.preventDefault();
+                Terminal.moveCursorTo(0);
+            } else if (key == 35) {
+                e.preventDefault();
+                Terminal.moveCursorTo(Terminal.input.length);
             } else if (key == 9) {
                 e.preventDefault();
                 Terminal.complete();
@@ -473,20 +542,17 @@ var Terminal = {
 
             var key = e.which || e.keyCode;
             if (key >= 32) {
-                var char = String.fromCharCode(key);
-                Terminal.input += char;
-                Terminal.updateInputDisplay();
+                Terminal.insertText(String.fromCharCode(key));
                 e.preventDefault();
             }
         });
     },
 
     updateInputDisplay: function () {
-        // Always update the LAST occurrence of cmd-input
-        var allInputs = $("#cmd-input");
-        if (allInputs.length > 0) {
-            $(allInputs[allInputs.length - 1]).text(Terminal.input);
-        }
+        var p = Math.max(0, Math.min(Terminal.cursorPos, Terminal.input.length));
+        Terminal.cursorPos = p;
+        $("#cmd-input").text(Terminal.input.slice(0, p));
+        $("#cmd-after").text(Terminal.input.slice(p));
         Terminal.scrollToBottom();
     },
 
@@ -516,8 +582,7 @@ var Terminal = {
         Terminal.historyIndex = -1;
         Terminal.historyDraft = "";
 
-        $("#cmd-input").remove();
-        $("#cursor").remove();
+        Terminal.removeInputLine();
 
         $("#console").append(cmd + "<br/>");
 
@@ -601,8 +666,9 @@ var Terminal = {
         }
 
         Terminal.input = "";
+        Terminal.cursorPos = 0;
         MobileTerm.clear();
-        $("#console").append(Terminal.getPromptHtml() + "<span id='cmd-input'></span><span id='cursor'>|</span>");
+        $("#console").append(Terminal.getPromptHtml() + Terminal.inputLineHtml());
         Terminal.scrollToBottom();
     }
 };
