@@ -57,6 +57,12 @@ var MobileTerm = {
             } else if (key === 9) {
                 e.preventDefault();
                 Terminal.complete();
+            } else if (key === 38) {
+                e.preventDefault();
+                Terminal.historyUp();
+            } else if (key === 40) {
+                e.preventDefault();
+                Terminal.historyDown();
             }
         });
     },
@@ -237,8 +243,34 @@ var Terminal = {
     path: ["home", "emerson"],
     isActive: false,
     history: [],
+    /** Position while browsing history with arrows; -1 = editing a new line. */
     historyIndex: -1,
+    /** What was typed before starting to browse history, restored by ArrowDown. */
+    historyDraft: "",
     cursorTimer: null,
+
+    historyUp: function () {
+        var h = Terminal.history;
+        if (!h.length) return;
+        if (Terminal.historyIndex === -1) {
+            Terminal.historyDraft = Terminal.input;
+            Terminal.historyIndex = h.length - 1;
+        } else if (Terminal.historyIndex > 0) {
+            Terminal.historyIndex--;
+        }
+        Terminal.setInput(h[Terminal.historyIndex]);
+    },
+
+    historyDown: function () {
+        if (Terminal.historyIndex === -1) return;
+        Terminal.historyIndex++;
+        if (Terminal.historyIndex >= Terminal.history.length) {
+            Terminal.historyIndex = -1;
+            Terminal.setInput(Terminal.historyDraft);
+        } else {
+            Terminal.setInput(Terminal.history[Terminal.historyIndex]);
+        }
+    },
 
     getWdDisplay: function () {
         var p = Terminal.path;
@@ -426,6 +458,12 @@ var Terminal = {
             } else if (key == 9) {
                 e.preventDefault();
                 Terminal.complete();
+            } else if (key == 38) {
+                e.preventDefault();
+                Terminal.historyUp();
+            } else if (key == 40) {
+                e.preventDefault();
+                Terminal.historyDown();
             }
         });
 
@@ -472,6 +510,12 @@ var Terminal = {
     processCommand: function () {
         var cmd = Terminal.input.trim();
 
+        if (cmd && cmd !== Terminal.history[Terminal.history.length - 1]) {
+            Terminal.history.push(cmd);
+        }
+        Terminal.historyIndex = -1;
+        Terminal.historyDraft = "";
+
         $("#cmd-input").remove();
         $("#cursor").remove();
 
@@ -493,6 +537,7 @@ var Terminal = {
             $("#console").append("<span style='color: #0f0;'>clear</span> - Clear the terminal screen<br/>");
             $("#console").append("<span style='color: #0f0;'>help</span> - Show this help<br/>");
             $("#console").append("<br/>Press <span style='color: #0f0;'>Tab</span> to complete file and directory names.<br/>");
+            $("#console").append("Use <span style='color: #0f0;'>&uarr;</span>/<span style='color: #0f0;'>&darr;</span> to browse previous commands.<br/>");
             $("#console").append("<br/>");
         } else if (name === "cd") {
             var arg = (tokens.slice(1).join(" ") || "").replace(/^["']|["']$/g, "");
