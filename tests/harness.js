@@ -25,6 +25,7 @@ function fail(msg) {
     throw new Error(msg);
 }
 
+/** Deep equality via JSON — for strings/numbers/arrays/plain objects, not DOM nodes (use ok(a === b)). */
 function eq(actual, expected, msg) {
     const a = JSON.stringify(actual);
     const e = JSON.stringify(expected);
@@ -146,6 +147,10 @@ async function runTests() {
         await waitFor(() => frame.contentWindow && frame.contentWindow.Terminal && frame.contentWindow.Typer, 20000, "site scripts");
         w = frame.contentWindow;
         w.Typer.speed = 1e6; // skip the typing animation
+        // CSS transitions never advance in headless Chrome with virtual time; make styles apply instantly
+        const noTransitions = w.document.createElement("style");
+        noTransitions.textContent = "*, *::before, *::after { transition: none !important; }";
+        w.document.head.appendChild(noTransitions);
         await waitFor(() => w.Terminal.isActive, 20000, "boot to finish");
 
         for (const t of tests) {

@@ -340,6 +340,31 @@ test("power button turns the screen off and reboots into the terminal", async ()
     eq(run("pwd"), ["/home/emerson"]);
 });
 
+test("power button shows ⏻, its LED is green when on and amber in standby, aria-pressed follows", async () => {
+    const btn = w.document.getElementById("power-btn");
+    const led = w.document.querySelector(".power-led");
+    const ledColor = () => w.getComputedStyle(led).backgroundColor;
+    ok(btn.querySelector("svg.power-icon"), "power icon");
+    // the whole button is clickable, including the part below the case's edge
+    const r = btn.getBoundingClientRect();
+    for (const y of [r.top + 3, r.top + r.height / 2, r.bottom - 3]) {
+        const hit = w.document.elementFromPoint(r.left + r.width / 2, y);
+        ok(hit === btn, "hit-test at y=" + y.toFixed(1) + " got " + (hit && (hit.className || hit.tagName)));
+    }
+    eq(btn.getAttribute("aria-pressed"), "true");
+    eq(ledColor(), "rgb(0, 255, 0)");
+
+    btn.click();
+    eq(btn.getAttribute("aria-pressed"), "false");
+    eq(ledColor(), "rgb(255, 160, 0)");
+    await waitFor(() => !w.Power.busy, 3000, "power off");
+
+    btn.click();
+    eq(btn.getAttribute("aria-pressed"), "true");
+    eq(ledColor(), "rgb(0, 255, 0)");
+    await waitFor(() => w.Terminal.isActive, 20000, "reboot");
+});
+
 // ----------------------------------------------------------------- mobile
 
 test("mobile: the native input is mirrored into the terminal and runs commands", async () => {

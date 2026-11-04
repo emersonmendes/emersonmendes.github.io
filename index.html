@@ -28,8 +28,14 @@
                             <div class="scanlines" aria-hidden="true"></div>
                         </div>
                     </div>
-                    <button type="button" class="power-btn is-on" id="power-btn"
-                        aria-label="Power monitor on/off" title="Power monitor on/off"></button>
+                    <button type="button" class="power-btn is-on" id="power-btn" aria-pressed="true"
+                        aria-label="Power monitor on/off" title="Power monitor on/off">
+                        <svg class="power-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M12 3.5v7.5" />
+                            <path d="M7 6.6a7.5 7.5 0 1 0 10 0" />
+                        </svg>
+                    </button>
+                    <span class="power-led" aria-hidden="true"></span>
                 </div>
                 <div class="monitor-neck"></div>
                 <div class="monitor-base"></div>

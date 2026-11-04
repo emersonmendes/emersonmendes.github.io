@@ -273,49 +273,83 @@ body {
 
 /* Power Button — sits on the bottom strip of the case frame; the case itself
    has pointer-events: none, so the button must re-enable them */
+/* Centered in the dark panel below the bezel, which is ~50px tall: the case's
+   30px bottom padding plus the 20px that .monitor-case::before hangs below it */
 .power-btn {
     position: absolute;
-    bottom: 4px;
+    bottom: -8px;
     right: 45px;
-    width: 22px;
-    height: 22px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
-    border: 2px solid #111;
+    border: 1px solid #0c0c0c;
     padding: 0;
-    background: radial-gradient(circle at 35% 30%, #555, #2a2a2a 60%, #111);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #8a8a8a;
+    background: radial-gradient(circle at 50% 30%, #4a4a4a, #2c2c2c 55%, #1b1b1b);
     box-shadow:
+        0 0 0 3px #1d1d1d,                      /* recess in the case */
+        inset 0 1px 1px rgba(255,255,255,0.18),
         inset 0 -2px 3px rgba(0,0,0,0.6),
-        inset 0 1px 1px rgba(255,255,255,0.15),
-        0 1px 2px rgba(0,0,0,0.5);
+        0 2px 4px rgba(0,0,0,0.6);
     cursor: pointer;
     pointer-events: auto;
     z-index: 5;
+    transition: color 0.2s, transform 0.08s, box-shadow 0.08s;
+}
+
+.power-btn:hover {
+    color: #d0d0d0;
 }
 
 .power-btn:active {
     transform: translateY(1px);
     box-shadow:
-        inset 0 2px 4px rgba(0,0,0,0.7),
+        0 0 0 3px #1d1d1d,
+        inset 0 2px 4px rgba(0,0,0,0.75),
         0 1px 1px rgba(0,0,0,0.4);
 }
 
-/* Power LED in the middle of the button */
-.power-btn::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 6px;
-    height: 6px;
-    margin: -3px 0 0 -3px;
-    border-radius: 50%;
-    background: #3a0a0a;
-    box-shadow: 0 0 2px rgba(255, 0, 0, 0.3);
+.power-btn:focus-visible {
+    outline: 2px solid var(--term-green);
+    outline-offset: 5px;
 }
 
-.power-btn.is-on::after {
+/* ⏻ symbol */
+.power-icon {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.6;
+    stroke-linecap: round;
+    pointer-events: none;
+}
+
+/* Status LED next to the button: green = on, amber = standby (off) */
+.power-led {
+    position: absolute;
+    bottom: 1.5px; /* vertically centered with the button */
+    right: 86px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #ffa000;
+    box-shadow:
+        inset 0 1px 1px rgba(255,255,255,0.35),
+        0 0 6px rgba(255, 160, 0, 0.7);
+    z-index: 5;
+    transition: background 0.3s, box-shadow 0.3s;
+}
+
+.power-btn.is-on + .power-led {
     background: var(--term-green);
-    box-shadow: 0 0 6px var(--term-green);
+    box-shadow:
+        inset 0 1px 1px rgba(255,255,255,0.4),
+        0 0 4px var(--term-green),
+        0 0 10px rgba(0, 255, 0, 0.5);
 }
 
 /* CRT power off/on — transform only lives during the animation (steady state
@@ -603,7 +637,7 @@ a:hover {
         height: 100% !important;
         flex: 1 1 0%;
         border-radius: 16px 16px 8px 8px;
-        padding: 12px;
+        padding: 12px 12px 30px; /* bottom strip fits the power button + LED */
         pointer-events: auto;
         overflow: hidden;
     }
@@ -640,10 +674,26 @@ a:hover {
     }
 
     .power-btn {
-        bottom: 2px;
+        bottom: 5px;
         right: 18px;
-        width: 18px;
-        height: 18px;
+        width: 20px;
+        height: 20px;
+        box-shadow:
+            0 0 0 2px #1d1d1d,
+            inset 0 1px 1px rgba(255,255,255,0.18),
+            inset 0 -2px 3px rgba(0,0,0,0.6);
+    }
+
+    .power-icon {
+        width: 10px;
+        height: 10px;
+    }
+
+    .power-led {
+        bottom: 12px;
+        right: 50px;
+        width: 6px;
+        height: 6px;
     }
 
     #crt-content {

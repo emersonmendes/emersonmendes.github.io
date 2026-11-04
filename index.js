@@ -898,7 +898,7 @@ var Power = {
         MobileTerm.detach();
         MobileTerm.syncBodyClass();
 
-        $("#power-btn").removeClass("is-on");
+        $("#power-btn").removeClass("is-on").attr("aria-pressed", "false");
         var $screen = $(".crt-screen");
         $screen.removeClass("powering-on").addClass("powering-off");
         setTimeout(function () {
@@ -912,7 +912,7 @@ var Power = {
         Power.busy = true;
         Power.isOn = true;
 
-        $("#power-btn").addClass("is-on");
+        $("#power-btn").addClass("is-on").attr("aria-pressed", "true");
         $("#console").html("");
         var $screen = $(".crt-screen");
         $screen.removeClass("is-off").addClass("powering-on");
