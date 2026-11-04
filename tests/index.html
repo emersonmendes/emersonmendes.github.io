@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Terminal tests</title>
+    <style>
+        body { font: 14px/1.5 monospace; background: #111; color: #ddd; margin: 16px; }
+        h1 { font-size: 18px; }
+        .pass { color: #3c3; }
+        .fail { color: #f66; }
+        #summary { white-space: pre-wrap; }
+        /* Wider than the 768px mobile breakpoint so the site runs in desktop mode */
+        #site { width: 1000px; height: 700px; border: 1px solid #333; display: block; margin-top: 16px; }
+    </style>
+</head>
+
+<body>
+    <h1>Terminal tests</h1>
+    <p>Filter with <code>?grep=text</code>.</p>
+    <pre id="summary" data-status="running">running…</pre>
+    <iframe id="site" src="../index.html"></iframe>
+    <script src="harness.js"></script>
+    <script src="tests.js"></script>
+    <script>runTests();</script>
+</body>
+
+</html>
