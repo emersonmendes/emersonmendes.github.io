@@ -54,6 +54,9 @@ var MobileTerm = {
             if (key === 13) {
                 e.preventDefault();
                 Terminal.processCommand();
+            } else if (key === 9) {
+                e.preventDefault();
+                Terminal.complete();
             }
         });
     },
@@ -278,12 +281,85 @@ var Terminal = {
         return false;
     },
 
+    /** Entries of a directory in the virtual FS, or null if it doesn't exist. */
+    listDirAt: function (segments) {
+        if (segments.length === 0) return [{ name: "home", dir: true }];
+        if (segments.length === 1 && segments[0] === "home") return [{ name: "emerson", dir: true }];
+        if (segments.length === 2 && segments[0] === "home" && segments[1] === "emerson") return [{ name: "emerson.txt", dir: false }];
+        return null;
+    },
+
     listDir: function () {
-        var p = Terminal.path;
-        if (p.length === 0) return ["home"];
-        if (p.length === 1 && p[0] === "home") return ["emerson"];
-        if (p.length === 2 && p[0] === "home" && p[1] === "emerson") return ["emerson.txt"];
-        return [];
+        return (Terminal.listDirAt(Terminal.path) || []).map(function (e) {
+            return e.name;
+        });
+    },
+
+    /** Absolute or cwd-relative path string -> normalized segments. */
+    resolvePath: function (arg) {
+        if (arg.charAt(0) === "/") return Terminal.normalizeSegments(Terminal.pathToSegments(arg));
+        return Terminal.normalizeSegments(Terminal.path.concat(arg.split("/")));
+    },
+
+    isEmersonFile: function (segments) {
+        return segments.length === 3 && segments[0] === "home" && segments[1] === "emerson" && segments[2] === "emerson.txt";
+    },
+
+    setInput: function (value) {
+        Terminal.input = value;
+        var inp = MobileTerm.el();
+        if (inp && MobileTerm.useMobileCapture()) inp.value = value;
+        Terminal.updateInputDisplay();
+    },
+
+    /** Tab completion of the last argument of cd/cat/rm against the virtual FS. */
+    complete: function () {
+        var input = Terminal.input;
+        var start = input.search(/\S*$/);
+        var head = input.slice(0, start);
+        if (!head.trim()) return; // still typing the command name
+        var cmd = head.trim().split(/\s+/)[0].toLowerCase();
+        if (cmd !== "cd" && cmd !== "cat" && cmd !== "rm") return;
+
+        var partial = input.slice(start);
+        var slash = partial.lastIndexOf("/");
+        var dirPart = partial.slice(0, slash + 1);
+        var base = partial.slice(slash + 1);
+        var entries = Terminal.listDirAt(dirPart ? Terminal.resolvePath(dirPart) : Terminal.path);
+        if (!entries) return;
+
+        var matches = entries.filter(function (e) {
+            return e.name.indexOf(base) === 0 && (cmd !== "cd" || e.dir);
+        });
+        if (!matches.length) return;
+
+        if (matches.length === 1) {
+            var only = matches[0];
+            Terminal.setInput(head + dirPart + only.name + (only.dir ? "/" : " "));
+            return;
+        }
+
+        var names = matches.map(function (e) {
+            return e.name;
+        });
+        var prefix = names.reduce(function (acc, n) {
+            var i = 0;
+            while (i < acc.length && acc.charAt(i) === n.charAt(i)) i++;
+            return acc.slice(0, i);
+        });
+        if (prefix.length > base.length) {
+            Terminal.setInput(head + dirPart + prefix);
+            return;
+        }
+
+        // Ambiguous: list the candidates and redraw the prompt with the same input
+        $("#cmd-input").remove();
+        $("#cursor").remove();
+        $("#console").append(
+            $("<span/>").text(input).html() + "<br/>" + names.join("  ") + "<br/>" +
+            Terminal.getPromptHtml() + "<span id='cmd-input'></span><span id='cursor'>|</span>"
+        );
+        Terminal.updateInputDisplay();
     },
 
     catEmersonContent: function () {
@@ -296,11 +372,7 @@ var Terminal = {
     },
 
     isProtectedEmersonRm: function (arg) {
-        var a = arg.replace(/^\.\//, "");
-        if (a === "/home/emerson/emerson.txt") return true;
-        if (a !== "emerson.txt") return false;
-        var p = Terminal.path;
-        return p.length === 2 && p[0] === "home" && p[1] === "emerson";
+        return Terminal.isEmersonFile(Terminal.resolvePath(arg));
     },
 
     init: function () {
@@ -351,6 +423,9 @@ var Terminal = {
                 e.preventDefault();
                 Terminal.input = Terminal.input.slice(0, -1);
                 Terminal.updateInputDisplay();
+            } else if (key == 9) {
+                e.preventDefault();
+                Terminal.complete();
             }
         });
 
@@ -410,12 +485,14 @@ var Terminal = {
             $("#console").append("<br/>");
             $("#console").append("<span style='color: #0bc;'>Available commands:</span><br/><br/>");
             $("#console").append("<span style='color: #0f0;'>cd</span> - Change directory (try <span style='color:#0f0'>cd ..</span>)<br/>");
+            $("#console").append("<span style='color: #0f0;'>pwd</span> - Print the current directory<br/>");
             $("#console").append("<span style='color: #0f0;'>ls</span> - List directory contents<br/>");
             $("#console").append("<span style='color: #0f0;'>cat</span> - Print a file (e.g. <span style='color:#0f0'>cat emerson.txt</span>)<br/>");
             $("#console").append("<span style='color: #0f0;'>rm</span> - Remove a file<br/>");
             $("#console").append("<span style='color: #0f0;'>snake</span> - Start the classic snake game<br/>");
             $("#console").append("<span style='color: #0f0;'>clear</span> - Clear the terminal screen<br/>");
             $("#console").append("<span style='color: #0f0;'>help</span> - Show this help<br/>");
+            $("#console").append("<br/>Press <span style='color: #0f0;'>Tab</span> to complete file and directory names.<br/>");
             $("#console").append("<br/>");
         } else if (name === "cd") {
             var arg = (tokens.slice(1).join(" ") || "").replace(/^["']|["']$/g, "");
@@ -425,18 +502,15 @@ var Terminal = {
                 if (Terminal.path.length > 0) Terminal.path.pop();
             } else if (arg === ".") {
             } else {
-                var target;
-                if (arg.charAt(0) === "/") {
-                    target = Terminal.normalizeSegments(Terminal.pathToSegments(arg));
-                } else {
-                    target = Terminal.normalizeSegments(Terminal.path.concat(arg.split("/")));
-                }
+                var target = Terminal.resolvePath(arg);
                 if (Terminal.isValidPath(target)) {
                     Terminal.path = target;
                 } else {
                     $("#console").append("cd: " + arg + ": No such file or directory<br/>");
                 }
             }
+        } else if (name === "pwd") {
+            $("#console").append("/" + Terminal.path.join("/") + "<br/>");
         } else if (name === "ls") {
             if (tokens.length > 1) {
                 $("#console").append("ls: too many arguments<br/>");
@@ -448,12 +522,15 @@ var Terminal = {
             var file = tokens.slice(1).join(" ").replace(/^["']|["']$/g, "");
             if (!file) {
                 $("#console").append("cat: missing file operand<br/>");
-            } else if (file !== "emerson.txt") {
-                $("#console").append("cat: " + file + ": No such file or directory<br/>");
-            } else if (Terminal.path.length === 2 && Terminal.path[0] === "home" && Terminal.path[1] === "emerson") {
-                Terminal.catEmersonContent();
             } else {
-                $("#console").append("cat: emerson.txt: No such file or directory<br/>");
+                var fileSegs = Terminal.resolvePath(file);
+                if (Terminal.isEmersonFile(fileSegs)) {
+                    Terminal.catEmersonContent();
+                } else if (Terminal.isValidPath(fileSegs)) {
+                    $("#console").append("cat: " + file + ": Is a directory<br/>");
+                } else {
+                    $("#console").append("cat: " + file + ": No such file or directory<br/>");
+                }
             }
         } else if (name === "rm") {
             var targetFile = tokens.slice(1).join(" ").replace(/^["']|["']$/g, "");
@@ -461,6 +538,8 @@ var Terminal = {
                 $("#console").append("rm: missing operand<br/>");
             } else if (Terminal.isProtectedEmersonRm(targetFile)) {
                 $("#console").append('Nice try, but this file is unremovable.<br/>');
+            } else if (Terminal.isValidPath(Terminal.resolvePath(targetFile))) {
+                $("#console").append("rm: cannot remove '" + targetFile + "': Is a directory<br/>");
             } else {
                 $("#console").append("rm: cannot remove '" + targetFile + "': No such file or directory<br/>");
             }
