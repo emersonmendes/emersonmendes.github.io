@@ -15,11 +15,10 @@ test("boot types emerson.txt and ends at an interactive prompt", () => {
 
 // --------------------------------------------------------------- commands
 
-test("help lists every command and the keyboard shortcuts", () => {
+test("help lists every command (and only commands)", () => {
     const out = run("help").join("\n");
     for (const c of ["cd", "pwd", "ls", "cat", "rm", "snake", "clear", "help"]) contains(out, c + " - ");
-    contains(out, "Tab to complete");
-    contains(out, "browse previous commands");
+    ok(!out.includes("Tab"), "keyboard shortcuts are not listed in help");
 });
 
 test("unknown command", () => {

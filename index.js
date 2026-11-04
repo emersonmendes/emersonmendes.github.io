@@ -601,8 +601,6 @@ var Terminal = {
             $("#console").append("<span style='color: #0f0;'>snake</span> - Start the classic snake game<br/>");
             $("#console").append("<span style='color: #0f0;'>clear</span> - Clear the terminal screen<br/>");
             $("#console").append("<span style='color: #0f0;'>help</span> - Show this help<br/>");
-            $("#console").append("<br/>Press <span style='color: #0f0;'>Tab</span> to complete file and directory names.<br/>");
-            $("#console").append("Use <span style='color: #0f0;'>&uarr;</span>/<span style='color: #0f0;'>&darr;</span> to browse previous commands.<br/>");
             $("#console").append("<br/>");
         } else if (name === "cd") {
             var arg = (tokens.slice(1).join(" ") || "").replace(/^["']|["']$/g, "");
